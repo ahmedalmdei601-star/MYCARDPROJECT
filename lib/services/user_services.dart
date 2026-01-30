@@ -8,6 +8,12 @@ class UserService {
     await _firestore.collection('users').doc(user.id).set(user.toMap());
   }
 
+  Future<void> updateLastLogin(String userId) async {
+    await _firestore.collection('users').doc(userId).update({
+      'lastLogin': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<UserModel?> getUser(String id) async {
     final doc = await _firestore.collection('users').doc(id).get();
     if (doc.exists && doc.data() != null) {

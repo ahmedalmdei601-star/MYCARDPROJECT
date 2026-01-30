@@ -3,7 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import 'home_screen.dart';
+import '../theme.dart';
+// تم إزالة home_screen.dart
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     try {
-      final user = await AuthService.login(
+        final user = await AuthService.login(
         identifierController.text.trim(),
         passwordController.text.trim(),
       );
@@ -86,16 +87,16 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.card_membership, size: 80, color: Colors.blue),
+              const Icon(Icons.card_membership, size: 80, color: primaryColor),
               const SizedBox(height: 20),
               const Text(
                 'تطبيق إدارة الكروت',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryColor),
               ),
               const SizedBox(height: 10),
               const Text(
                 'نظام إدارة الكروت مسبقة الدفع',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 40),
               TextField(
@@ -103,7 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
                   labelText: 'رقم الهاتف أو البريد الإلكتروني',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person),
                 ),
               ),
@@ -113,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'كلمة المرور',
-                  border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
@@ -123,10 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: loading ? null : login,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                  ),
+                  // تم تطبيق الثيم الجديد تلقائياً
                   child: loading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('دخول'),
@@ -136,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'إذا لم يكن لديك حساب، يرجى التواصل مع الأدمن.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ],
           ),

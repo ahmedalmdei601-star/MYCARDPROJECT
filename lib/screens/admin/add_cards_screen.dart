@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 import '../../services/card_services.dart';
+import 'package:provider/provider.dart';
+import '../../providers/card_state.dart';
+import '../../theme.dart';
 
 class AddCardsScreen extends StatefulWidget {
   const AddCardsScreen({super.key});
@@ -14,7 +17,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
   final TextEditingController _cardNumberController = TextEditingController();
   final TextEditingController _valueController = TextEditingController();
 
-  String _selectedCategory = 'YemenMobile';
+  String _selectedProvider = 'YemenMobile';
   bool _loading = false;
 
   final List<String> _categories = [
@@ -33,7 +36,8 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
 
   Future<void> _pickFile() async {
     final valueText = _valueController.text.trim();
-    if (valueText.isEmpty) {
+    final value = int.tryParse(valueText);
+    if (value == null) {
       _showMessage('الرجاء إدخال قيمة الكروت أولاً');
       return;
     }
@@ -59,8 +63,8 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
         if (codes.isEmpty) {
           _showMessage('لم يتم العثور على أكواد صالحة في الملف');
         } else {
-          final cardService = CardService();
-          int added = await cardService.addCardsBatch(codes, _selectedCategory, int.parse(valueText));
+          final cardState = Provider.of<CardState>(context, listen: false);
+          int added = await cardState.addCardsBatch(codes, _selectedProvider, value);
           _showMessage('تمت معالجة ${codes.length} كود. تم إضافة $added كرت جديد بنجاح');
         }
       }
@@ -87,12 +91,12 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
     }
 
     setState(() => _loading = true);
-    final CardService cardService = CardService();
+    final cardState = Provider.of<CardState>(context, listen: false);
 
     try {
-      await cardService.addCard(
+      await cardState.addCard(
         cardNumber: cardNumber,
-        category: _selectedCategory,
+        provider: _selectedProvider,
         value: value,
       );
       _cardNumberController.clear();
@@ -127,7 +131,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
           children: [
             const Text(
               'إضافة يدوية',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor),
             ),
             const SizedBox(height: 15),
             TextField(
@@ -151,13 +155,12 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              value: _selectedProvider,
               items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _selectedCategory = v!),
+              onChanged: (v) => setState(() => _selectedProvider = v!),
               decoration: const InputDecoration(
                 labelText: 'الشركة',
                 prefixIcon: Icon(Icons.business),
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
@@ -168,9 +171,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
                 onPressed: _loading ? null : _saveCard,
                 icon: const Icon(Icons.save),
                 label: const Text('حفظ الكرت'),
-                style: ElevatedButton.styleFrom(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
+                // تم تطبيق الثيم الجديد تلقائياً
               ),
             ),
             const Padding(
@@ -179,7 +180,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
             ),
             const Text(
               'إضافة عبر ملف (TXT)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: accentColor),
             ),
             const SizedBox(height: 10),
             const Text(
@@ -195,8 +196,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
                 icon: const Icon(Icons.upload_file),
                 label: const Text('رفع ملف TXT ومعالجة الأكواد'),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.green),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  side: const BorderSide(color: accentColor),
                 ),
               ),
             ),

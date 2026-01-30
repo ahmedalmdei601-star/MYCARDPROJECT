@@ -3,6 +3,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_state.dart';
+import '../../theme.dart';
 import 'send_card_screen.dart';
 import 'client_inventory_screen.dart';
 import 'client_history_screen.dart';
@@ -69,12 +72,7 @@ class ClientDashboard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await AuthService.signOut();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
+              await Provider.of<UserState>(context, listen: false).signOut();
             },
           ),
         ],
@@ -90,28 +88,28 @@ class ClientDashboard extends StatelessWidget {
               context,
               title: "إرسال كرت",
               icon: Icons.send_to_mobile,
-              color: Colors.green,
+              color: secondaryColor,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SendCardScreen())),
             ),
             _buildMenuCard(
               context,
               title: "الكروت المتاحة",
               icon: Icons.inventory,
-              color: Colors.blue,
+              color: primaryColor,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientInventoryScreen())),
             ),
             _buildMenuCard(
               context,
               title: "سجل العمليات",
               icon: Icons.history,
-              color: Colors.orange,
+              color: accentColor,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientHistoryScreen())),
             ),
             _buildMenuCard(
               context,
               title: "تغيير كلمة المرور",
               icon: Icons.lock_reset,
-              color: Colors.redAccent,
+              color: errorColor,
               onTap: () => _showChangePasswordDialog(context),
             ),
           ],
@@ -123,9 +121,7 @@ class ClientDashboard extends StatelessWidget {
   Widget _buildMenuCard(BuildContext context, {required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Card(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

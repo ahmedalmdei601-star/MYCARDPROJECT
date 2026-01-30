@@ -4,6 +4,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/user_state.dart';
+import 'screens/admin/admin_dashboard.dart';
+import 'screens/client/client_dashboard.dart';
+import 'screens/login_screen.dart';
+import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +26,12 @@ void main() async {
     debugPrint("Firebase Initialization error: $e");
   }
 
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => UserState(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 Future<void> _ensureAdminUser() async {
@@ -66,31 +77,73 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'إدارة الكروت',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
-      builder: (context, widget) {
-        ErrorWidget.builder = (FlutterErrorDetails details) {
-          return Scaffold(
-            body: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'حدث خطأ غير متوقع: ${details.exception}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
+    return Consumer<UserState>(
+      builder: (context, userState, child) {
+        // 1. Loading State
+        if (userState.isLoading) {
+          return MaterialApp(
+            title: 'إدارة الكروت',
+            debugShowCheckedModeBanner: false,
+            theme: appTheme,
+            home: const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
             ),
           );
-        };
-        return widget!;
+        }
+
+        // 2. Not Authenticated State (Login Screen)
+        if (!userState.isAuthenticated) {
+          return MaterialApp(
+            title: 'إدارة الكروت',
+            debugShowCheckedModeBanner: false,
+            theme: appTheme,
+            home: const LoginScreen(),
+            builder: _errorWidgetBuilder,
+          );
+        }
+
+        // 3. Admin State
+        if (userState.isAdmin) {
+          return MaterialApp(
+            title: 'إدارة الكروت - الأدمن',
+            debugShowCheckedModeBanner: false,
+            theme: appTheme,
+            home: const AdminDashboard(),
+            builder: _errorWidgetBuilder,
+          );
+        }
+
+        // 4. Client State
+        return MaterialApp(
+          title: 'إدارة الكروت - البقالة',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+            useMaterial3: true,
+          ),
+          home: const ClientDashboard(),
+          builder: _errorWidgetBuilder,
+        );
       },
     );
   }
+}
+
+Widget _errorWidgetBuilder(BuildContext context, Widget? widget) {
+  ErrorWidget.builder = (FlutterErrorDetails details) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            'حدث خطأ غير متوقع: ${details.exception}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  };
+  return widget!;
+}
 }

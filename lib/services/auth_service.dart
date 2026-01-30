@@ -35,6 +35,7 @@ class AuthService {
           name: name,
           phone: phone,
           role: 'client', // Always create as 'client'
+          createdAt: DateTime.now(),
         ));
         return cred.user;
       }
@@ -56,6 +57,10 @@ class AuthService {
         email: email,
         password: password,
       );
+      if (cred.user != null) {
+        // Update lastLogin in Firestore
+        await _userService.updateLastLogin(cred.user!.uid);
+      }
       return cred.user;
     } on FirebaseAuthException catch (e) {
       print('Login Error: ${e.code} - ${e.message}');

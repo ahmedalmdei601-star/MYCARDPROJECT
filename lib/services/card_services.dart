@@ -6,7 +6,7 @@ class CardService {
   /// إضافة كرت جديد
   Future<void> addCard({
     required String cardNumber,
-    required String category,
+    required String provider,
     required int value,
   }) async {
     final docRef = _firestore.collection('cards').doc(cardNumber);
@@ -18,7 +18,7 @@ class CardService {
 
     await docRef.set({
       'cardNumber': cardNumber,
-      'category': category,
+      'provider': provider,
       'value': value,
       'status': 'available', // available, distributed, used
       'ownerId': 'admin',
@@ -30,7 +30,7 @@ class CardService {
   }
 
   /// إضافة مجموعة كروت (Batch) مع التحقق من التكرار
-  Future<int> addCardsBatch(List<String> codes, String category, int value) async {
+  Future<int> addCardsBatch(List<String> codes, String provider, int value) async {
     int addedCount = 0;
     
     // تقسيم الكروت إلى مجموعات (كل مجموعة 500 كرت كحد أقصى لقيود Firestore Batch)
@@ -46,12 +46,9 @@ class CardService {
         
         final docRef = _firestore.collection('cards').doc(trimmedCode);
         
-        // ملاحظة: الـ Batch لا يدعم التحقق من الوجود قبل الكتابة بشكل مباشر
-        // لذا سنستخدم set مع merge: false. إذا كان الكرت موجوداً سيتم الكتابة فوقه
-        // أو يمكن تحسين ذلك مستقبلاً بالتحقق من الوجود أولاً إذا كان العدد صغيراً
         batch.set(docRef, {
           'cardNumber': trimmedCode,
-          'category': category,
+          'provider': provider,
           'value': value,
           'status': 'available',
           'ownerId': 'admin',
@@ -72,13 +69,15 @@ class CardService {
   /// توزيع الكروت لبقالة
   Future<void> distributeCards({
     required String clientId,
-    required String category,
+    required String provider,
+    required int value,
     required int count,
   }) async {
     final query = await _firestore
         .collection('cards')
         .where('status', isEqualTo: 'available')
-        .where('category', isEqualTo: category)
+        .where('provider', isEqualTo: provider)
+        .where('value', isEqualTo: value)
         .where('ownerId', isEqualTo: 'admin')
         .limit(count)
         .get();
@@ -98,13 +97,23 @@ class CardService {
     await batch.commit();
   }
 
+  /// جلب الكروت الخاصة بالعميل
+  Future<List<Map<String, dynamic>>> getClientCards(String clientId) async {
+    final query = await _firestore
+        .collection('cards')
+        .where('ownerId', isEqualTo: clientId)
+        .get();
+    return query.docs.map((doc) => doc.data()).toList();
+  }
+
   /// جلب كرت متاح للبقالة
-  Future<Map<String, dynamic>?> getAvailableCard(String clientId, String category) async {
+  Future<Map<String, dynamic>?> getAvailableCard(String clientId, String provider, int value) async {
     final query = await _firestore
         .collection('cards')
         .where('status', isEqualTo: 'distributed')
         .where('ownerId', isEqualTo: clientId)
-        .where('category', isEqualTo: category)
+        .where('provider', isEqualTo: provider)
+        .where('value', isEqualTo: value)
         .limit(1)
         .get();
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../login_screen.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_state.dart';
+import '../../theme.dart';
 import 'add_cards_screen.dart';
 import 'distribute_screen.dart';
 import 'reports_screen.dart';
@@ -18,72 +21,72 @@ class AdminDashboard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await AuthService.signOut();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (_) => false,
-              );
+              await Provider.of<UserState>(context, listen: false).signOut();
             },
           ),
         ],
       ),
-      body: Padding(
+      body: GridView.count(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
         padding: const EdgeInsets.all(16.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          children: [
-            _buildMenuCard(
-              context,
-              title: "إضافة بقالة",
-              icon: Icons.person_add,
-              color: Colors.blue,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
-            ),
-            _buildMenuCard(
-              context,
-              title: "إضافة كروت",
-              icon: Icons.add_card,
-              color: Colors.green,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen())),
-            ),
-            _buildMenuCard(
-              context,
-              title: "توزيع كروت",
-              icon: Icons.send,
-              color: Colors.orange,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen())),
-            ),
-            _buildMenuCard(
-              context,
-              title: "التقارير",
-              icon: Icons.bar_chart,
-              color: Colors.purple,
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
-            ),
-          ],
-        ),
+        children: [
+          _buildMenuCard(
+            context,
+            title: "إضافة بقالة",
+            icon: Icons.person_add,
+            color: primaryColor,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+          ),
+          _buildMenuCard(
+            context,
+            title: "إضافة كروت",
+            icon: Icons.add_card,
+            color: accentColor,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen())),
+          ),
+          _buildMenuCard(
+            context,
+            title: "توزيع كروت",
+            icon: Icons.send,
+            color: secondaryColor,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen())),
+          ),
+          _buildMenuCard(
+            context,
+            title: "التقارير",
+            icon: Icons.bar_chart,
+            color: errorColor,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, {required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      child: InkWell(
+        onTap: onTap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: color),
+            Icon(icon, size: 50, color: color),
             const SizedBox(height: 10),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
     );
   }
-}
