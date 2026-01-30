@@ -40,8 +40,22 @@ class AuthService {
         return cred.user;
       }
     } on FirebaseAuthException catch (e) {
+      // تحسين معالجة الأخطاء لتقديم رسائل أوضح
+      String errorMessage = 'خطأ غير معروف في إنشاء الحساب.';
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'رقم الهاتف هذا مسجل بالفعل.';
+      } else if (e.code == 'invalid-email') {
+        errorMessage = 'صيغة رقم الهاتف غير صحيحة.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'كلمة المرور ضعيفة جداً.';
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = 'فشل الاتصال بالإنترنت.';
+      } else if (e.code == 'unknown') {
+        // هذا هو الخطأ الذي يظهر عند فشل الـ API Key
+        errorMessage = 'خطأ في إعدادات Firebase. يرجى التحقق من API Key.';
+      }
       print('Error creating client account: ${e.message}');
-      rethrow;
+      throw Exception(errorMessage);
     }
     return null;
   }
@@ -63,8 +77,16 @@ class AuthService {
       }
       return cred.user;
     } on FirebaseAuthException catch (e) {
+      String errorMessage = 'خطأ غير معروف في تسجيل الدخول.';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        errorMessage = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
+      } else if (e.code == 'network-request-failed') {
+        errorMessage = 'فشل الاتصال بالإنترنت.';
+      } else if (e.code == 'unknown') {
+        errorMessage = 'خطأ في إعدادات Firebase. يرجى التحقق من API Key.';
+      }
       print('Login Error: ${e.code} - ${e.message}');
-      rethrow;
+      throw Exception(errorMessage);
     }
   }
 

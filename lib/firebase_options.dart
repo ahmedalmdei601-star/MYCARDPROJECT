@@ -5,15 +5,6 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
-///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
@@ -49,20 +40,24 @@ class DefaultFirebaseOptions {
     }
   }
 
+  // =========================================================================
+  // يجب استبدال القيم التالية بالقيم الحقيقية من مشروعك في Firebase Console
+  // =========================================================================
+
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
+    apiKey: 'YOUR_REAL_ANDROID_API_KEY_HERE', // من إعدادات المشروع > مفاتيح الويب
+    appId: 'YOUR_REAL_ANDROID_APP_ID_HERE', // من إعدادات التطبيق في Firebase
+    messagingSenderId: 'YOUR_REAL_MESSAGING_SENDER_ID_HERE', // من إعدادات المشروع > السحابة والمراسلة
+    projectId: 'YOUR_REAL_PROJECT_ID_HERE', // من إعدادات المشروع > عام
+    storageBucket: 'YOUR_REAL_STORAGE_BUCKET_HERE', // من إعدادات المشروع > عام
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR-API-KEY',
-    appId: 'YOUR-APP-ID',
-    messagingSenderId: 'YOUR-SENDER-ID',
-    projectId: 'YOUR-PROJECT-ID',
-    storageBucket: 'YOUR-STORAGE-BUCKET',
-    iosBundleId: 'YOUR-BUNDLE-ID',
+    apiKey: 'YOUR_REAL_IOS_API_KEY_HERE',
+    appId: 'YOUR_REAL_IOS_APP_ID_HERE',
+    messagingSenderId: 'YOUR_REAL_MESSAGING_SENDER_ID_HERE',
+    projectId: 'YOUR_REAL_PROJECT_ID_HERE',
+    storageBucket: 'YOUR_REAL_STORAGE_BUCKET_HERE',
+    iosBundleId: 'YOUR_REAL_IOS_BUNDLE_ID_HERE',
   );
 }
