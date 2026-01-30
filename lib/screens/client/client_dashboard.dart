@@ -1,8 +1,5 @@
-# DO NOT EDIT MANUS-GENERATED CODE
-
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
-import '../login_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_state.dart';
 import '../../theme.dart';
@@ -29,15 +26,20 @@ class ClientDashboard extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+              passwordController.dispose();
+            },
             child: const Text("إلغاء"),
           ),
           ElevatedButton(
             onPressed: () async {
               if (passwordController.text.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("كلمة المرور يجب أن تكون 6 أحرف على الأقل")),
-                );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("كلمة المرور يجب أن تكون 6 أحرف على الأقل")),
+                  );
+                }
                 return;
               }
               try {
@@ -47,6 +49,7 @@ class ClientDashboard extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("تم تغيير كلمة المرور بنجاح")),
                   );
+                  passwordController.dispose();
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -121,7 +124,7 @@ class ClientDashboard extends StatelessWidget {
   Widget _buildMenuCard(BuildContext context, {required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-        child: Card(
+      child: Card(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

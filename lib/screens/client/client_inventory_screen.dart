@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
+import '../../theme.dart';
 
 class ClientInventoryScreen extends StatelessWidget {
   const ClientInventoryScreen({super.key});
@@ -25,21 +26,25 @@ class ClientInventoryScreen extends StatelessWidget {
                 final docs = snapshot.data!.docs;
                 if (docs.isEmpty) return const Center(child: Text('لا توجد كروت متاحة حالياً'));
 
-                // تجميع الكروت حسب الفئة
+                // تجميع الكروت حسب الشركة والقيمة
                 Map<String, int> stats = {};
                 for (var doc in docs) {
-                  String cat = doc['category'];
-                  stats[cat] = (stats[cat] ?? 0) + 1;
+                  String provider = doc['provider'] ?? 'Unknown';
+                  int value = doc['value'] ?? 0;
+                  String key = '$provider - $value ريال';
+                  stats[key] = (stats[key] ?? 0) + 1;
                 }
 
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: stats.entries.map((e) {
                     return Card(
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
                       child: ListTile(
-                        leading: const Icon(Icons.style, color: Colors.green),
-                        title: Text('فئة ${e.key}'),
-                        trailing: Text('${e.value} كرت متاح', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        leading: const Icon(Icons.style, color: accentColor),
+                        title: Text(e.key, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        trailing: Text('${e.value} كرت', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: primaryColor)),
                       ),
                     );
                   }).toList(),

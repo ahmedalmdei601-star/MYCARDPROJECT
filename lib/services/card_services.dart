@@ -107,13 +107,12 @@ class CardService {
   }
 
   /// جلب كرت متاح للبقالة
-  Future<Map<String, dynamic>?> getAvailableCard(String clientId, String provider, int value) async {
+  Future<Map<String, dynamic>?> getAvailableCard(String clientId, String provider) async {
     final query = await _firestore
         .collection('cards')
         .where('status', isEqualTo: 'distributed')
         .where('ownerId', isEqualTo: clientId)
         .where('provider', isEqualTo: provider)
-        .where('value', isEqualTo: value)
         .limit(1)
         .get();
 

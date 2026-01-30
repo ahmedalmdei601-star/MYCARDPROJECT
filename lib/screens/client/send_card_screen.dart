@@ -18,6 +18,12 @@ class _SendCardScreenState extends State<SendCardScreen> {
 
   final List<String> _categories = ['YemenMobile', 'Sabafon', 'MTN', 'YOU'];
 
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
   Future<void> _sendCard() async {
     final phone = _phoneController.text.trim();
     final currentUser = AuthService.currentUser;

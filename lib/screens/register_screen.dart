@@ -1,7 +1,6 @@
-# DO NOT EDIT MANUS-GENERATED CODE
-
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -42,6 +41,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('إضافة حساب بقالة جديد')),
@@ -59,7 +66,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               controller: nameController,
               decoration: const InputDecoration(
                 labelText: 'اسم البقالة / صاحب البقالة',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.store),
               ),
             ),
@@ -69,7 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: 'رقم الهاتف (سيستخدم لتسجيل الدخول)',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.phone),
               ),
             ),
@@ -79,7 +84,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               obscureText: true,
               decoration: const InputDecoration(
                 labelText: 'كلمة المرور الأولية',
-                border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.lock),
               ),
             ),
@@ -89,10 +93,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 50,
               child: ElevatedButton(
                 onPressed: loading ? null : createClient,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                ),
                 child: loading ? const CircularProgressIndicator(color: Colors.white) : const Text('إنشاء الحساب'),
               ),
             ),

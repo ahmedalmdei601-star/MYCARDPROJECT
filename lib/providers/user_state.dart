@@ -49,6 +49,12 @@ class UserState extends ChangeNotifier {
     }
   }
 
+  Future<void> loadUserData() async {
+    if (_auth.currentUser != null) {
+      await _loadUser(_auth.currentUser!.uid);
+    }
+  }
+
   Future<void> signOut() async {
     await AuthService.signOut();
     _user = null;

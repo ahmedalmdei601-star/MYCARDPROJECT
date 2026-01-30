@@ -26,6 +26,12 @@ class _DistributeScreenState extends State<DistributeScreen> {
   final List<int> _values = [100, 200, 500, 1000];
 
   @override
+  void dispose() {
+    _countController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('توزيع الكروت')),

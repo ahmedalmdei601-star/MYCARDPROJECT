@@ -1,10 +1,9 @@
-# DO NOT EDIT MANUS-GENERATED CODE
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
-// تم إزالة home_screen.dart
+import '../providers/user_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,16 +46,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     try {
-        final user = await AuthService.login(
+      final user = await AuthService.login(
         identifierController.text.trim(),
         passwordController.text.trim(),
       );
 
       if (user != null && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
+        // تحديث حالة المستخدم في Provider
+        if (mounted) {
+          await Provider.of<UserState>(context, listen: false).loadUserData();
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -76,6 +75,13 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
     if (mounted) setState(() => loading = false);
+  }
+
+  @override
+  void dispose() {
+    identifierController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -122,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: loading ? null : login,
-                  // تم تطبيق الثيم الجديد تلقائياً
                   child: loading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('دخول'),
