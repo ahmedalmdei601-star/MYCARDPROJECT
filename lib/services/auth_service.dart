@@ -22,14 +22,14 @@ class AuthService {
     required String name,
   }) async {
     try {
-      // Create user in Firebase Auth
+      // 1. Create user in Firebase Auth
       final UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: _identifierToEmail(phone),
         password: password,
       );
 
       if (cred.user != null) {
-        // Create user document in Firestore
+        // 2. Create user document in Firestore
         await _userService.createUser(UserModel(
           id: cred.user!.uid,
           name: name,
@@ -37,11 +37,15 @@ class AuthService {
           role: 'client', // Always create as 'client'
           createdAt: DateTime.now(),
         ));
+        
+        // Note: The admin is still logged in as the new user now because createUserWithEmailAndPassword 
+        // automatically signs in the new user. We need to handle this in the UI or re-auth the admin.
+        // For simplicity in this flow, we assume the admin will need to re-login or we handle it.
+        
         return cred.user;
       }
     } on FirebaseAuthException catch (e) {
-      // تحسين معالجة الأخطاء لتقديم رسائل أوضح
-      String errorMessage = 'خطأ غير معروف في إنشاء الحساب.';
+      String errorMessage = 'خطأ في إنشاء الحساب.';
       if (e.code == 'email-already-in-use') {
         errorMessage = 'رقم الهاتف هذا مسجل بالفعل.';
       } else if (e.code == 'invalid-email') {
@@ -50,12 +54,10 @@ class AuthService {
         errorMessage = 'كلمة المرور ضعيفة جداً.';
       } else if (e.code == 'network-request-failed') {
         errorMessage = 'فشل الاتصال بالإنترنت.';
-      } else if (e.code == 'unknown') {
-        // هذا هو الخطأ الذي يظهر عند فشل الـ API Key
-        errorMessage = 'خطأ في إعدادات Firebase. يرجى التحقق من API Key.';
       }
-      print('Error creating client account: ${e.message}');
       throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('حدث خطأ غير متوقع: $e');
     }
     return null;
   }
@@ -77,16 +79,17 @@ class AuthService {
       }
       return cred.user;
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'خطأ غير معروف في تسجيل الدخول.';
-      if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+      String errorMessage = 'خطأ في تسجيل الدخول.';
+      if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
         errorMessage = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
       } else if (e.code == 'network-request-failed') {
         errorMessage = 'فشل الاتصال بالإنترنت.';
-      } else if (e.code == 'unknown') {
-        errorMessage = 'خطأ في إعدادات Firebase. يرجى التحقق من API Key.';
+      } else if (e.code == 'too-many-requests') {
+        errorMessage = 'تم حظر المحاولات مؤقتاً بسبب نشاط مشبوه. حاول لاحقاً.';
       }
-      print('Login Error: ${e.code} - ${e.message}');
       throw Exception(errorMessage);
+    } catch (e) {
+      throw Exception('حدث خطأ غير متوقع: $e');
     }
   }
 
@@ -96,7 +99,7 @@ class AuthService {
     if (user != null) {
       await user.updatePassword(newPassword);
     } else {
-      throw Exception('No authenticated user found.');
+      throw Exception('لم يتم العثور على مستخدم مسجل.');
     }
   }
 

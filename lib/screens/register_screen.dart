@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/user_services.dart';
+import '../models/user_model.dart';
 import '../theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -15,6 +19,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final passwordController = TextEditingController();
   bool loading = false;
 
+  // Helper to convert phone to a valid email format for Firebase Auth
+  String _identifierToEmail(String identifier) {
+    if (identifier.contains('@')) return identifier.trim();
+    return '${identifier.trim()}@mycardproject.app';
+  }
+
   Future<void> createClient() async {
     if (nameController.text.isEmpty || phoneController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إكمال جميع الحقول')));
@@ -22,22 +32,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     setState(() => loading = true);
+    
     try {
-      // Use the new admin-only method
-      await AuthService.createClientAccount(
-        phone: phoneController.text.trim(),
-        password: passwordController.text.trim(),
-        name: nameController.text.trim(),
+      // To prevent the Admin from being logged out when creating a new user,
+      // we use a secondary Firebase App instance for the creation process.
+      FirebaseApp secondaryApp = await Firebase.initializeApp(
+        name: 'SecondaryApp',
+        options: Firebase.app().options,
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنشاء حساب البقالة بنجاح')));
-        Navigator.pop(context);
+      FirebaseAuth secondaryAuth = FirebaseAuth.instanceFor(app: secondaryApp);
+      
+      UserCredential cred = await secondaryAuth.createUserWithEmailAndPassword(
+        email: _identifierToEmail(phoneController.text.trim()),
+        password: passwordController.text.trim(),
+      );
+
+      if (cred.user != null) {
+        // Create user document in Firestore using the main app's Firestore instance
+        await UserService().createUser(UserModel(
+          id: cred.user!.uid,
+          name: nameController.text.trim(),
+          phone: phoneController.text.trim(),
+          role: 'client',
+          createdAt: DateTime.now(),
+        ));
+
+        // Clean up the secondary app
+        await secondaryApp.delete();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنشاء حساب البقالة بنجاح')));
+          Navigator.pop(context);
+        }
       }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'خطأ في إنشاء الحساب.';
+      if (e.code == 'email-already-in-use') {
+        errorMessage = 'رقم الهاتف هذا مسجل بالفعل.';
+      } else if (e.code == 'weak-password') {
+        errorMessage = 'كلمة المرور ضعيفة جداً.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-    if (mounted) setState(() => loading = false);
   }
 
   @override

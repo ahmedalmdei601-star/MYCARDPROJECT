@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/user_services.dart';
+import '../models/user_model.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,25 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final identifierController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
-
-  String _getArabicErrorMessage(String errorCode) {
-    switch (errorCode) {
-      case 'invalid-credential':
-        return 'بيانات الدخول غير صحيحة. تأكد من الرقم/البريد وكلمة المرور.';
-      case 'user-not-found':
-        return 'هذا الحساب غير موجود.';
-      case 'wrong-password':
-        return 'كلمة المرور غير صحيحة.';
-      case 'too-many-requests':
-        return 'تم حظر المحاولات مؤقتاً بسبب نشاط مشبوه. يرجى المحاولة لاحقاً.';
-      case 'network-request-failed':
-        return 'فشل الاتصال بالإنترنت. يرجى التحقق من الشبكة.';
-      case 'invalid-email':
-        return 'تنسيق البريد الإلكتروني أو الرقم غير صحيح.';
-      default:
-        return 'حدث خطأ غير متوقع: $errorCode';
-    }
-  }
 
   Future<void> login() async {
     if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
@@ -48,25 +31,20 @@ class _LoginScreenState extends State<LoginScreen> {
         identifierController.text.trim(),
         passwordController.text.trim(),
       );
-      // لا نعمل Navigator هنا — main.dart سيتكفل بالتوجيه
-    } on FirebaseAuthException catch (e) {
+      // No Navigator here — main.dart RootScreen will handle routing based on UserState
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_getArabicErrorMessage(e.code)),
+            content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
         );
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ غير متوقع: $e')),
-        );
-      }
+    } finally {
+      if (mounted) setState(() => loading = false);
     }
-    if (mounted) setState(() => loading = false);
   }
 
   @override
@@ -129,29 +107,48 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // ===== زر إنشاء الأدمن المؤقت =====
+              // ===== زر إنشاء الأدمن المؤقت (للاستخدام الأول فقط) =====
               const SizedBox(height: 12),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              TextButton(
                 onPressed: () async {
+                  setState(() => loading = true);
                   try {
-                    await AuthService.createClientAccount(
-                      phone: '781475757',
-                      password: 'password123',
-                      name: 'Admin',
+                    // Helper to convert phone to email
+                    String email = identifierController.text.contains('@') 
+                        ? identifierController.text.trim() 
+                        : '${identifierController.text.trim()}@mycardproject.app';
+                    
+                    UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                      email: email,
+                      password: passwordController.text.trim(),
                     );
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('تم إنشاء حساب الأدمن بنجاح')),
-                    );
+                    if (cred.user != null) {
+                      await UserService().createUser(UserModel(
+                        id: cred.user!.uid,
+                        name: 'مدير النظام',
+                        phone: identifierController.text.trim(),
+                        role: 'admin',
+                        createdAt: DateTime.now(),
+                      ));
+                      
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تم إنشاء حساب الأدمن بنجاح. يمكنك الدخول الآن.')),
+                        );
+                      }
+                    }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('خطأ في إنشاء الأدمن: $e')),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('خطأ: $e')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) setState(() => loading = false);
                   }
                 },
-                child: const Text('إنشاء حساب الأدمن (مؤقت)'),
+                child: const Text('إنشاء حساب أدمن بالبيانات أعلاه (لأول مرة فقط)'),
               ),
 
               const SizedBox(height: 30),
