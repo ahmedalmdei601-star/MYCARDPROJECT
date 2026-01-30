@@ -12,7 +12,7 @@ const Color errorColor = Color(0xFFD32F2F); // Red
 final ThemeData appTheme = ThemeData(
   // استخدام خط Cairo (يجب التأكد من إضافته في pubspec.yaml)
   fontFamily: 'Cairo',
-  
+
   // الألوان الأساسية
   primaryColor: primaryColor,
   colorScheme: ColorScheme.light(
@@ -30,7 +30,7 @@ final ThemeData appTheme = ThemeData(
     elevation: 0,
     centerTitle: true,
     titleTextStyle: TextStyle(
-      fontFamily: 'Cairo',
+     // fontFamily: 'Cairo',
       fontSize: 20,
       fontWeight: FontWeight.bold,
     ),
@@ -73,11 +73,11 @@ final ThemeData appTheme = ThemeData(
     hintStyle: const TextStyle(color: Colors.grey),
   ),
 
-  // Card Theme
-  cardTheme: CardTheme(
+  // Card Theme (متوافق مع Flutter الجديد)
+  cardTheme: const CardThemeData(
     elevation: 4,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.all(Radius.circular(16)),
     ),
   ),
 );

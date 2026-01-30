@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../theme.dart';
-import '../providers/user_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,17 +44,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     try {
-      final user = await AuthService.login(
+      await AuthService.login(
         identifierController.text.trim(),
         passwordController.text.trim(),
       );
-
-      if (user != null && mounted) {
-        // تحديث حالة المستخدم في Provider
-        if (mounted) {
-          await Provider.of<UserState>(context, listen: false).loadUserData();
-        }
-      }
+      // لا نعمل Navigator هنا — main.dart سيتكفل بالتوجيه
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -105,6 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
               const SizedBox(height: 40),
+
               TextField(
                 controller: identifierController,
                 keyboardType: TextInputType.emailAddress,
@@ -114,6 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
               TextField(
                 controller: passwordController,
                 obscureText: true,
@@ -123,6 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -133,6 +128,32 @@ class _LoginScreenState extends State<LoginScreen> {
                       : const Text('دخول'),
                 ),
               ),
+
+              // ===== زر إنشاء الأدمن المؤقت =====
+              const SizedBox(height: 12),
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () async {
+                  try {
+                    await AuthService.createClientAccount(
+                      phone: '781475757',
+                      password: 'password123',
+                      name: 'Admin',
+                    );
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('تم إنشاء حساب الأدمن بنجاح')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('خطأ في إنشاء الأدمن: $e')),
+                    );
+                  }
+                },
+                child: const Text('إنشاء حساب الأدمن (مؤقت)'),
+              ),
+
               const SizedBox(height: 30),
               const Text(
                 'إذا لم يكن لديك حساب، يرجى التواصل مع الأدمن.',
