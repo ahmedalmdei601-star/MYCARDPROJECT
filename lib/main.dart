@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'screens/home_screen.dart';
 import 'package:provider/provider.dart';
 import 'providers/user_state.dart';
 import 'screens/admin/admin_dashboard.dart';
@@ -14,75 +13,109 @@ import 'theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  bool firebaseInitialized = false;
   try {
+    // التأكد من تهيئة Firebase بالخيارات الصحيحة للمنصة
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    firebaseInitialized = true;
     
-    // إنشاء حساب الأدمن تلقائياً إذا لم يكن موجوداً
+    // محاولة إنشاء الأدمن فقط إذا نجحت التهيئة
     await _ensureAdminUser();
     
   } catch (e) {
-    debugPrint("Firebase Initialization error: $e");
+    debugPrint("Firebase Initialization Critical Error: $e");
+    // يمكن هنا عرض شاشة خطأ للمستخدم بدلاً من تعليق التطبيق
   }
 
   runApp(
     ChangeNotifierProvider(
       create: (context) => UserState(),
-      child: const MyApp(),
+      child: MyApp(isFirebaseReady: firebaseInitialized),
     ),
   );
 }
 
 Future<void> _ensureAdminUser() async {
-  const adminEmail = "781475757@mycard.project.app"; // البريد الإلكتروني المحول من الرقم
-  const adminPassword = "password123"; // كلمة مرور افتراضية للأدمن
+  // استخدام البريد المحول من الرقم (نفس المنطق المستخدم في AuthService)
+  const adminPhone = "781475757";
+  const adminEmail = "$adminPhone@mycardproject.app"; 
+  const adminPassword = "password123"; 
   
   try {
-    // محاولة تسجيل الدخول للتأكد من وجود الحساب
+    // 1. محاولة تسجيل الدخول
     await FirebaseAuth.instance.signInWithEmailAndPassword(
       email: adminEmail,
       password: adminPassword,
     );
-    print("Admin user already exists.");
+    debugPrint("Admin authenticated successfully.");
   } on FirebaseAuthException catch (e) {
-    if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+    // 2. إذا لم يكن موجوداً، نقوم بإنشائه
+    if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
       try {
-        // إنشاء الحساب في Auth
         UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: adminEmail,
           password: adminPassword,
         );
         
-        // إضافة البيانات في Firestore
         if (cred.user != null) {
           await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
             'id': cred.user!.uid,
             'name': 'Admin User',
-            'phone': '781475757',
+            'phone': adminPhone,
             'role': 'admin',
             'createdAt': FieldValue.serverTimestamp(),
           });
-          print("Admin user created successfully.");
+          debugPrint("New Admin user created.");
         }
       } catch (createError) {
-        print("Error creating admin: $createError");
+        debugPrint("Failed to create admin: $createError");
       }
+    } else {
+      debugPrint("Auth Error: ${e.code}");
     }
+  } catch (e) {
+    debugPrint("General Error in _ensureAdminUser: $e");
   }
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final bool isFirebaseReady;
+  const MyApp({super.key, required this.isFirebaseReady});
 
   @override
   Widget build(BuildContext context) {
+    if (!isFirebaseReady) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: appTheme,
+        home: const Scaffold(
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, color: Colors.red, size: 60),
+                  SizedBox(height: 20),
+                  Text(
+                    'خطأ في الاتصال بـ Firebase\nيرجى التحقق من إعدادات الـ API Key وملف google-services.json',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Consumer<UserState>(
       builder: (context, userState, child) {
-        // 1. Loading State
         if (userState.isLoading) {
           return MaterialApp(
-            title: 'إدارة الكروت',
             debugShowCheckedModeBanner: false,
             theme: appTheme,
             home: const Scaffold(
@@ -91,10 +124,8 @@ class MyApp extends StatelessWidget {
           );
         }
 
-        // 2. Not Authenticated State (Login Screen)
         if (!userState.isAuthenticated) {
           return MaterialApp(
-            title: 'إدارة الكروت',
             debugShowCheckedModeBanner: false,
             theme: appTheme,
             home: const LoginScreen(),
@@ -102,26 +133,10 @@ class MyApp extends StatelessWidget {
           );
         }
 
-        // 3. Admin State
-        if (userState.isAdmin) {
-          return MaterialApp(
-            title: 'إدارة الكروت - الأدمن',
-            debugShowCheckedModeBanner: false,
-            theme: appTheme,
-            home: const AdminDashboard(),
-            builder: _errorWidgetBuilder,
-          );
-        }
-
-        // 4. Client State
         return MaterialApp(
-          title: 'إدارة الكروت - البقالة',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            useMaterial3: true,
-          ),
-          home: const ClientDashboard(),
+          theme: appTheme,
+          home: userState.isAdmin ? const AdminDashboard() : const ClientDashboard(),
           builder: _errorWidgetBuilder,
         );
       },
@@ -145,5 +160,4 @@ Widget _errorWidgetBuilder(BuildContext context, Widget? widget) {
     );
   };
   return widget!;
-}
 }
