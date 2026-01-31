@@ -12,12 +12,9 @@ class SendCardScreen extends StatefulWidget {
 }
 
 class _SendCardScreenState extends State<SendCardScreen> {
-  String? _selectedCategory;
   final _phoneController = TextEditingController();
   final _cardService = CardService();
   bool _loading = false;
-
-  final List<String> _categories = ['YemenMobile', 'Sabafon', 'MTN', 'YOU'];
 
   @override
   void dispose() {
@@ -29,11 +26,6 @@ class _SendCardScreenState extends State<SendCardScreen> {
     final phone = _phoneController.text.trim();
     final currentUser = AuthService.currentUser;
 
-    if (_selectedCategory == null) {
-      _showMsg('الرجاء اختيار الشركة المزودة', isError: true);
-      return;
-    }
-
     if (phone.isEmpty || currentUser == null) {
       _showMsg('الرجاء إدخال رقم هاتف الزبون', isError: true);
       return;
@@ -41,7 +33,8 @@ class _SendCardScreenState extends State<SendCardScreen> {
 
     setState(() => _loading = true);
     try {
-      // استخدام _selectedCategory! بعد التأكد من أنها ليست null
+      // يتم جلب الكرت المتاح تلقائياً من مخزن المستخدم
+      // المنطق البرمجي في CardService سيتولى جلب الكرت المناسب
       final card = await _cardService.getAvailableCard(currentUser.uid);
       
       if (card == null) {
@@ -94,89 +87,89 @@ class _SendCardScreenState extends State<SendCardScreen> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(title: const Text('إرسال كرت لعميل')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionTitle('بيانات الكرت والعميل', Icons.send_to_mobile_outlined),
-            const SizedBox(height: 20),
-            Card(
-              margin: EdgeInsets.zero,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    // Provider Selection
-                    DropdownButtonFormField<String>(
-                      value: _selectedCategory,
-                      hint: const Text('اختر الشركة المزودة'),
-                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (String? v) {
-                        setState(() {
-                          _selectedCategory = v;
-                        });
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'الشركة المزودة',
-                        prefixIcon: Icon(Icons.business, color: primaryColor),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Customer Phone Input
-                    TextField(
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(
-                        labelText: 'رقم هاتف الزبون',
-                        hintText: '7xxxxxxxx',
-                        prefixIcon: Icon(Icons.person_outline, color: primaryColor),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    
-                    // Action Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _loading ? null : _sendCard,
-                        icon: _loading 
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.send_rounded),
-                        label: const Text('إرسال الكرت الآن'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 30),
-            
-            // Helpful Tip
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.green.shade100),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.lightbulb_outline, color: primaryColor),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'عند الضغط على إرسال، سيتم سحب كرت واحد متاح من مخزنك وفتح تطبيق الرسائل في هاتفك لإرساله للزبون.',
-                      style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionTitle('بيانات الزبون', Icons.send_to_mobile_outlined),
+                const SizedBox(height: 20),
+                Card(
+                  margin: EdgeInsets.zero,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        // Helpful Info about the process
+                        const Text(
+                          'سيتم سحب كرت واحد متاح من مخزنك تلقائياً وإرساله للرقم أدناه',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 14, color: Colors.black54, fontFamily: 'Cairo'),
+                        ),
+                        const SizedBox(height: 30),
+                        
+                        // Customer Phone Input
+                        TextField(
+                          controller: _phoneController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'رقم هاتف الزبون',
+                            hintText: '7xxxxxxxx',
+                            prefixIcon: Icon(Icons.person_outline, color: primaryColor),
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        
+                        // Action Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _loading ? null : _sendCard,
+                            icon: _loading 
+                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : const Icon(Icons.send_rounded),
+                            label: const Text('إرسال الكرت الآن', style: TextStyle(fontFamily: 'Cairo')),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                
+                const SizedBox(height: 30),
+                
+                // Helpful Tip
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.green.shade100),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, color: primaryColor),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'عند الضغط على إرسال، سيتم فتح تطبيق الرسائل في هاتفك مع نص الرسالة جاهزاً للإرسال.',
+                          style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4, fontFamily: 'Cairo'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -192,6 +185,7 @@ class _SendCardScreenState extends State<SendCardScreen> {
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: Colors.black87,
+            fontFamily: 'Cairo',
           ),
         ),
       ],

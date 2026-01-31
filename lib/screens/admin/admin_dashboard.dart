@@ -19,87 +19,96 @@ class AdminDashboard extends StatelessWidget {
         title: const Text("لوحة التحكم"),
       ),
       drawer: _buildDrawer(context),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Welcome Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: primaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "مرحباً المسؤول",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "إليك ملخص إدارة الشبكة اليوم",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 20,
-              mainAxisSpacing: 20,
-              padding: const EdgeInsets.all(24),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: Column(
               children: [
-                _buildMenuCard(
-                  context,
-                  title: "إضافة بقالة",
-                  subtitle: "إنشاء حساب Client",
-                  icon: Icons.storefront_outlined,
-                  color: Colors.blue,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                // Welcome Header
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "مرحباً المسؤول",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "إليك ملخص إدارة الشبكة اليوم",
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 14,
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildMenuCard(
-                  context,
-                  title: "إضافة كروت",
-                  subtitle: "إدخال كروت الشبكة",
-                  icon: Icons.add_card_outlined,
-                  color: Colors.orange,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen())),
-                ),
-                _buildMenuCard(
-                  context,
-                  title: "توزيع كروت",
-                  subtitle: "توزيع على البقالات",
-                  icon: Icons.move_to_inbox_outlined,
-                  color: Colors.teal,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen())),
-                ),
-                _buildMenuCard(
-                  context,
-                  title: "التقارير",
-                  subtitle: "المبيعات والاستخدام",
-                  icon: Icons.analytics_outlined,
-                  color: Colors.purple,
-                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: constraints.maxWidth > 600 ? 3 : 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: 0.85, // تحسين النسبة لتجنب الـ Overflow
+                    children: [
+                      _buildMenuCard(
+                        context,
+                        title: "إضافة بقالة",
+                        subtitle: "إنشاء حساب Client",
+                        icon: Icons.storefront_outlined,
+                        color: Colors.blue,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                      ),
+                      _buildMenuCard(
+                        context,
+                        title: "إضافة كروت",
+                        subtitle: "إدخال كروت الشبكة",
+                        icon: Icons.add_card_outlined,
+                        color: Colors.orange,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddCardsScreen())),
+                      ),
+                      _buildMenuCard(
+                        context,
+                        title: "توزيع كروت",
+                        subtitle: "توزيع على البقالات",
+                        icon: Icons.move_to_inbox_outlined,
+                        color: Colors.teal,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DistributeScreen())),
+                      ),
+                      _buildMenuCard(
+                        context,
+                        title: "التقارير",
+                        subtitle: "المبيعات والاستخدام",
+                        icon: Icons.analytics_outlined,
+                        color: Colors.purple,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -118,7 +127,7 @@ class AdminDashboard extends StatelessWidget {
               "المسؤول",
               style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
             ),
-            accountEmail: const Text("إدارة الشبكة المحلية"),
+            accountEmail: const Text("إدارة الشبكة المحلية", style: TextStyle(fontFamily: 'Cairo')),
           ),
           Expanded(
             child: ListView(
@@ -227,6 +236,7 @@ class AdminDashboard extends StatelessWidget {
   }) {
     return Card(
       elevation: 0,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(color: Colors.grey.withOpacity(0.1)),
@@ -235,17 +245,19 @@ class AdminDashboard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 28, color: color),
                 ),
-                child: Icon(icon, size: 28, color: color),
               ),
               const SizedBox(height: 12),
               Text(
@@ -254,17 +266,19 @@ class AdminDashboard extends StatelessWidget {
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
+                  fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 subtitle,
                 style: const TextStyle(
                   fontSize: 10,
                   color: Colors.black45,
+                  fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1,
