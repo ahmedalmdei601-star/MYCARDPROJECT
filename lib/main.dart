@@ -54,19 +54,19 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // 1. إذا كان التطبيق في حالة تحميل البيانات
+    // 1. حالة التحميل
     if (userState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // 2. فرض شاشة تسجيل الدخول عند التشغيل لأول مرة أو عند طلب تسجيل دخول يدوي
-    if (userState.requireManualLogin || !userState.isAuthenticated) {
+    // 2. إذا لم يكن مسجلاً
+    if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور (Role) بعد نجاح تسجيل الدخول اليدوي
+    // 3. التوجيه بناءً على الدور
     if (userState.isAdmin) {
       return const AdminDashboard();
     }
@@ -75,28 +75,18 @@ class RootScreen extends StatelessWidget {
       return const ClientDashboard();
     }
 
-    // 4. حالة احتياطية إذا كان مسجلاً ولكن لا توجد بيانات في Firestore
+    // 4. حالة احتياطية
     return Scaffold(
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              const Text(
-                'خطأ في جلب بيانات الصلاحيات.\nيرجى التواصل مع الإدارة.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, fontFamily: 'Cairo'),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => userState.signOut(),
-                child: const Text('العودة لتسجيل الدخول'),
-              ),
-            ],
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('بيانات المستخدم غير مكتملة'),
+            ElevatedButton(
+              onPressed: () => userState.signOut(),
+              child: const Text('تسجيل الخروج'),
+            ),
+          ],
         ),
       ),
     );

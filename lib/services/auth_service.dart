@@ -64,11 +64,6 @@ class AuthService {
     String password,
   ) async {
     try {
-      // التأكد من تسجيل الخروج من أي جلسة سابقة قبل محاولة الدخول الجديد
-      if (_auth.currentUser != null) {
-        await _auth.signOut();
-      }
-
       final email = _identifierToEmail(identifier);
       final cred = await _auth.signInWithEmailAndPassword(
         email: email,

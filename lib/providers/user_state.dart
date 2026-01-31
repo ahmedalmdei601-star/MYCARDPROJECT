@@ -10,29 +10,21 @@ class UserState extends ChangeNotifier {
   
   UserModel? _user;
   bool _isLoading = true;
-  
-  // فرض تسجيل الدخول اليدوي دائماً عند تشغيل التطبيق
-  bool _requireManualLogin = true;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
-  
-  // لا يتم اعتبار المستخدم authenticated إلا إذا تمت المصادقة يدوياً
-  bool get isAuthenticated => _user != null && !_requireManualLogin;
-  bool get requireManualLogin => _requireManualLogin;
+  bool get isAuthenticated => _user != null;
 
   UserState() {
-    // الاستماع لحالة المصادقة من Firebase
-    _auth.authStateChanges().listen((firebaseUser) async {
+    // الاعتماد الكلي على حالة المصادقة من Firebase
+    _auth.authStateChanges().listen((firebaseUser) {
       if (firebaseUser != null) {
-        await _loadUser(firebaseUser.uid);
+        _loadUser(firebaseUser.uid);
       } else {
-        // عند تسجيل الخروج أو عدم وجود مستخدم
         _user = null;
         _isLoading = false;
-        _requireManualLogin = true; // إعادة الضبط عند الخروج
         notifyListeners();
       }
     });
@@ -52,31 +44,13 @@ class UserState extends ChangeNotifier {
     }
   }
 
-  // دالة لتأكيد نجاح تسجيل الدخول اليدوي (يتم استدعاؤها بعد AuthService.login)
-  Future<void> setManualLoginSuccess(String uid) async {
-    _isLoading = true;
-    notifyListeners();
-    
-    try {
-      // التأكد من تحميل أحدث البيانات من Firestore فوراً
-      _user = await _userService.getUser(uid);
-      _requireManualLogin = false;
-    } catch (e) {
-      debugPrint('Error during manual login sync: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // دالة تسجيل الخروج التي تعيد ضبط كل شيء
+  // دالة تسجيل الخروج البسيطة
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
     try {
-      await AuthService.signOut();
+      await _auth.signOut();
       _user = null;
-      _requireManualLogin = true;
     } catch (e) {
       debugPrint('Error during sign out: $e');
     } finally {
@@ -92,7 +66,6 @@ class UserState extends ChangeNotifier {
     } else {
       _user = null;
       _isLoading = false;
-      _requireManualLogin = true;
       notifyListeners();
     }
   }
