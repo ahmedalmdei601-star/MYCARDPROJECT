@@ -224,9 +224,4 @@ class AdminDashboard extends StatelessWidget {
       ),
     );
   }
-
-  void _showSettings(BuildContext context) {
-    // سيتم استدعاء شاشة الإعدادات الموحدة لاحقاً
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتقل للإعدادات من القائمة الجانبية')));
-  }
 }
