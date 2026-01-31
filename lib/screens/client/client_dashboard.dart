@@ -7,6 +7,7 @@ import 'send_card_screen.dart';
 import 'client_inventory_screen.dart';
 import 'client_history_screen.dart';
 import '../login_screen.dart';
+import '../settings_screen.dart';
 
 class ClientDashboard extends StatelessWidget {
   const ClientDashboard({super.key});
@@ -251,7 +252,7 @@ class ClientDashboard extends StatelessWidget {
                   title: "الإعدادات",
                   onTap: () {
                     Navigator.pop(context);
-                    _showSettingsDialog(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
                   },
                 ),
                 _buildDrawerItem(

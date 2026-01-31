@@ -7,6 +7,7 @@ import 'distribute_screen.dart';
 import 'reports_screen.dart';
 import 'clients_management_screen.dart';
 import '../login_screen.dart';
+import '../settings_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -14,9 +15,10 @@ class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("لوحة التحكم"),
+        title: const Text("لوحة التحكم", style: TextStyle(fontFamily: 'Cairo')),
+        elevation: 0,
       ),
       drawer: _buildDrawer(context),
       body: LayoutBuilder(
@@ -31,8 +33,8 @@ class AdminDashboard extends StatelessWidget {
                   decoration: const BoxDecoration(
                     color: primaryColor,
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
+                      bottomLeft: Radius.circular(32),
+                      bottomRight: Radius.circular(32),
                     ),
                   ),
                   child: const Column(
@@ -40,21 +42,12 @@ class AdminDashboard extends StatelessWidget {
                     children: [
                       Text(
                         "مرحباً المسؤول",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Cairo',
-                        ),
+                        style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                       ),
                       SizedBox(height: 8),
                       Text(
                         "إليك ملخص إدارة الشبكة اليوم",
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                          fontFamily: 'Cairo',
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo'),
                       ),
                     ],
                   ),
@@ -123,10 +116,7 @@ class AdminDashboard extends StatelessWidget {
               backgroundColor: Colors.white,
               child: Icon(Icons.admin_panel_settings, color: primaryColor, size: 40),
             ),
-            accountName: const Text(
-              "المسؤول",
-              style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
-            ),
+            accountName: const Text("المسؤول", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
             accountEmail: const Text("إدارة الشبكة المحلية", style: TextStyle(fontFamily: 'Cairo')),
           ),
           Expanded(
@@ -171,15 +161,7 @@ class AdminDashboard extends StatelessWidget {
                   title: "الإعدادات",
                   onTap: () {
                     Navigator.pop(context);
-                    _showSettingsDialog(context);
-                  },
-                ),
-                _buildDrawerItem(
-                  icon: Icons.info_outline,
-                  title: "حولنا",
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showAboutDialog(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
                   },
                 ),
                 const Divider(),
@@ -206,84 +188,36 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    Color? color,
-  }) {
+  Widget _buildDrawerItem({required IconData icon, required String title, required VoidCallback onTap, Color? color}) {
     return ListTile(
       leading: Icon(icon, color: color ?? primaryColor),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontFamily: 'Cairo',
-          color: color ?? Colors.black87,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
+      title: Text(title, style: TextStyle(fontFamily: 'Cairo', color: color ?? Colors.black87, fontWeight: FontWeight.w500)),
       onTap: onTap,
     );
   }
 
-  Widget _buildMenuCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildMenuCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color color, required VoidCallback onTap}) {
     return Card(
       elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: Colors.grey.withOpacity(0.1)),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey.withOpacity(0.1))),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Flexible(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, size: 28, color: color),
-                ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(icon, size: 32, color: color),
               ),
               const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                  fontFamily: 'Cairo',
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, fontFamily: 'Cairo'), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.black45,
-                  fontFamily: 'Cairo',
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              Text(subtitle, style: const TextStyle(fontSize: 11, color: Colors.black45, fontFamily: 'Cairo'), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
             ],
           ),
         ),
@@ -291,65 +225,8 @@ class AdminDashboard extends StatelessWidget {
     );
   }
 
-  void _showSettingsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('الإعدادات', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.language, color: primaryColor),
-              title: const Text('لغة التطبيق', style: TextStyle(fontFamily: 'Cairo')),
-              subtitle: const Text('العربية', style: TextStyle(fontFamily: 'Cairo')),
-              onTap: () {
-                Navigator.pop(context);
-                _showMessage(context, 'سيتم دعم تغيير اللغة قريباً');
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حول التطبيق', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "تم تطوير هذا التطبيق بواسطة المهندس أحمد المدي",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              "البريد الإلكتروني:\nahmedalmdei601@gmail.com",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("إغلاق", style: TextStyle(fontFamily: 'Cairo')),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showMessage(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg, style: const TextStyle(fontFamily: 'Cairo'))),
-    );
+  void _showSettings(BuildContext context) {
+    // سيتم استدعاء شاشة الإعدادات الموحدة لاحقاً
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('انتقل للإعدادات من القائمة الجانبية')));
   }
 }

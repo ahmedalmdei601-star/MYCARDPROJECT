@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'providers/user_state.dart';
 import 'providers/card_state.dart';
@@ -11,16 +12,9 @@ import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint("Firebase initialized");
-  } catch (e) {
-    debugPrint("Initialization error: $e");
-  }
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(
     MultiProvider(
       providers: [
@@ -37,12 +31,51 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userState = Provider.of<UserState>(context);
+
     return MaterialApp(
-      title: 'تطبيق إدارة الكروت',
+      title: 'MyCard Project',
       debugShowCheckedModeBanner: false,
-      theme: appTheme,
+      
+      // Theme Configuration
+      themeMode: userState.themeMode,
+      theme: ThemeData(
+        useMaterial3: true,
+        primarySwatch: Colors.green,
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+        scaffoldBackgroundColor: backgroundColor,
+        fontFamily: 'Cairo',
+        appBarTheme: const AppBarTheme(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+          ),
+        ),
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: primaryColor,
+        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor, brightness: Brightness.dark),
+        textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
+      ),
+
+      // Localization Configuration
+      locale: userState.locale,
+      supportedLocales: const [
+        Locale('ar', ''),
+        Locale('en', ''),
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
       home: const RootScreen(),
-      builder: _errorWidgetBuilder,
     );
   }
 }
@@ -54,72 +87,22 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // 1. حالة التحميل
     if (userState.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
     }
 
-    // 2. إذا لم يكن مسجلاً (أو حدث خطأ في الصلاحيات)
     if (!userState.isAuthenticated) {
-      if (userState.errorMessage != null) {
-        return Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(
-                    userState.errorMessage!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => userState.signOut(),
-                    child: const Text('العودة لتسجيل الدخول'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور (Role)
     if (userState.isAdmin) {
       return const AdminDashboard();
-    }
-
-    if (userState.isClient) {
+    } else if (userState.isClient) {
       return const ClientDashboard();
+    } else {
+      return const LoginScreen();
     }
-
-    // 4. حالة احتياطية
-    return const LoginScreen();
   }
-}
-
-Widget _errorWidgetBuilder(BuildContext context, Widget? widget) {
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Text(
-            'حدث خطأ غير متوقع:\n${details.exception}',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red),
-          ),
-        ),
-      ),
-    );
-  };
-  return widget!;
 }

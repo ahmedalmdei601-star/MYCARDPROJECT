@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد لضمان الاستقرار
+    // تصفير الحالة محلياً قبل محاولة تسجيل دخول جديد
     final userState = Provider.of<UserState>(context, listen: false);
     userState.clearState();
 
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
         phoneController.text.trim(),
         passwordController.text.trim(),
       );
-      // التوجيه يتم تلقائياً عبر RootScreen المستمع لحالة UserState
+      // التوجيه يتم تلقائياً عبر المستمع في RootScreen
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -73,41 +73,25 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo or Brand Icon
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: primaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
-                    Icons.wifi_tethering,
-                    size: 80,
-                    color: primaryColor,
-                  ),
+                  child: const Icon(Icons.wifi_tethering, size: 80, color: primaryColor),
                 ),
                 const SizedBox(height: 30),
-                Text(
+                const Text(
                   'مرحباً بك',
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
-                    color: primaryColor,
-                  ),
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Cairo', color: primaryColor),
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   'قم بتسجيل الدخول لإدارة شبكتك',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black54,
-                    fontFamily: 'Cairo',
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 50),
-
-                // Phone Input
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
@@ -119,8 +103,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 20),
-
-                // Password Input
                 TextField(
                   controller: passwordController,
                   obscureText: !_isPasswordVisible,
@@ -129,47 +111,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: 'أدخل كلمة المرور',
                     prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
                   ),
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 40),
-
-                // Login Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: loading ? null : login,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
                     child: loading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Text('تسجيل الدخول', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+                        ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('تسجيل الدخول', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 40),
-                
                 const Text(
                   'نظام إدارة الشبكات المحلية للبقالات',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                    fontFamily: 'Cairo',
-                  ),
+                  style: TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'Cairo'),
                 ),
               ],
             ),
