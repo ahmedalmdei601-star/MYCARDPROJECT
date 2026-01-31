@@ -15,6 +15,7 @@ class UserState extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   
+  // هذه الخصائص تعتمد كلياً على الكائن _user الحالي
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
   bool get isAuthenticated => _user != null;
@@ -25,31 +26,43 @@ class UserState extends ChangeNotifier {
       if (firebaseUser != null) {
         _loadUser(firebaseUser.uid);
       } else {
-        _user = null;
-        _isLoading = false;
-        notifyListeners();
+        _resetState();
       }
     });
   }
 
+  // دالة خاصة لإعادة تعيين الحالة بالكامل
+  void _resetState() {
+    _user = null;
+    _isLoading = false;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   Future<void> _loadUser(String uid) async {
+    // التأكد من تصفير الدور الحالي قبل جلب الجديد
+    _user = null;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
+
     try {
+      // جلب وثيقة المستخدم حصرياً من Firestore
       final userData = await _userService.getUser(uid);
+      
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
       } else {
-        // إذا لم يوجد مستند أو الدور غير معرف
+        // إذا لم يوجد مستند أو الدور غير معرف في Firestore
         _user = null;
-        _errorMessage = 'صلاحيات المستخدم غير معرفة. يرجى التواصل مع المسؤول.';
+        _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
         await _auth.signOut();
       }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      debugPrint('Error loading user data from Firestore: $e');
       _user = null;
-      _errorMessage = 'حدث خطأ أثناء جلب بيانات الصلاحيات.';
+      _errorMessage = 'فشل جلب بيانات الصلاحيات من الخادم.';
+      await _auth.signOut();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -57,21 +70,26 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    // لا نحتاج لتعيين isLoading هنا لتجنب أخطاء الـ Assertion عند التوجيه السريع
     try {
       await _auth.signOut();
-      _user = null;
-      _errorMessage = null;
-      notifyListeners();
+      _resetState();
     } catch (e) {
       debugPrint('Error during sign out: $e');
     }
   }
 
-  // دالة لتنظيف الحالة يدوياً وفورياً
+  // دالة لتنظيف الحالة يدوياً وفورياً (تستخدم عند تغيير كلمة المرور)
   void clearState() {
-    _user = null;
-    _errorMessage = null;
-    notifyListeners();
+    _resetState();
+  }
+  
+  // دالة مساعدة لإعادة تحميل البيانات يدوياً إذا لزم الأمر
+  Future<void> refresh() async {
+    final currentUser = _auth.currentUser;
+    if (currentUser != null) {
+      await _loadUser(currentUser.uid);
+    } else {
+      _resetState();
+    }
   }
 }
