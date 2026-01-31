@@ -16,12 +16,10 @@ class _DistributeScreenState extends State<DistributeScreen> {
   final _userService = UserService();
   
   String? _selectedClientId;
-  String _selectedProvider = 'YemenMobile';
   int? _selectedValue;
   final _countController = TextEditingController();
   bool _loading = false;
 
-  final List<String> _providers = ['YemenMobile', 'Sabafon', 'MTN', 'YOU'];
   final List<int> _values = [100, 200, 500, 1000];
 
   @override
@@ -70,18 +68,6 @@ class _DistributeScreenState extends State<DistributeScreen> {
                           ),
                         );
                       },
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Provider Selection
-                    DropdownButtonFormField<String>(
-                      value: _selectedProvider,
-                      items: _providers.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) => setState(() => _selectedProvider = v!),
-                      decoration: const InputDecoration(
-                        labelText: 'الشركة',
-                        prefixIcon: Icon(Icons.business, color: primaryColor),
-                      ),
                     ),
                     const SizedBox(height: 20),
                     
@@ -142,7 +128,7 @@ class _DistributeScreenState extends State<DistributeScreen> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'سيتم نقل الكروت المتاحة في مخزن الأدمن إلى مخزن البقالة المحددة.',
+                      'سيتم نقل الكروت المتاحة في مخزن الأدمن إلى مخزن البقالة المحددة تلقائياً.',
                       style: TextStyle(fontSize: 12, color: Colors.blue, height: 1.4),
                     ),
                   ),
@@ -172,7 +158,6 @@ class _DistributeScreenState extends State<DistributeScreen> {
       final cardState = Provider.of<CardState>(context, listen: false);
       await cardState.distributeCards(
         clientId: _selectedClientId!,
-        provider: _selectedProvider,
         value: _selectedValue!,
         count: count,
       );
@@ -181,7 +166,7 @@ class _DistributeScreenState extends State<DistributeScreen> {
     } catch (e) {
       String error = e.toString();
       if (error.contains('NOT_ENOUGH_CARDS')) {
-        error = 'لا يوجد عدد كافٍ من الكروت في المخزن لهذه الشركة والقيمة';
+        error = 'لا يوجد عدد كافٍ من الكروت المتاحة بهذه القيمة في المخزن';
       }
       _showMsg('خطأ: $error', isError: true);
     } finally {
@@ -190,6 +175,7 @@ class _DistributeScreenState extends State<DistributeScreen> {
   }
 
   void _showMsg(String m, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(m, style: const TextStyle(fontFamily: 'Cairo')),

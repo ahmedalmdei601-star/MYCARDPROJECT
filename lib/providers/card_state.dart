@@ -68,7 +68,6 @@ class CardState extends ChangeNotifier {
 
   Future<void> distributeCards({
     required String clientId,
-    required String provider,
     required int value,
     required int count,
   }) async {
@@ -77,7 +76,6 @@ class CardState extends ChangeNotifier {
     try {
       await _cardService.distributeCards(
         clientId: clientId,
-        provider: provider,
         value: value,
         count: count,
       );

@@ -66,17 +66,15 @@ class CardService {
     return addedCount;
   }
 
-  /// توزيع الكروت لبقالة
+  /// توزيع الكروت لبقالة (بدون اعتماد على الشركة)
   Future<void> distributeCards({
     required String clientId,
-    required String provider,
     required int value,
     required int count,
   }) async {
     final query = await _firestore
         .collection('cards')
         .where('status', isEqualTo: 'available')
-        .where('provider', isEqualTo: provider)
         .where('value', isEqualTo: value)
         .where('ownerId', isEqualTo: 'admin')
         .limit(count)
@@ -106,13 +104,12 @@ class CardService {
     return query.docs.map((doc) => doc.data()).toList();
   }
 
-  /// جلب كرت متاح للبقالة
-  Future<Map<String, dynamic>?> getAvailableCard(String clientId, String provider) async {
+  /// جلب كرت متاح للبقالة (بدون اعتماد على الشركة)
+  Future<Map<String, dynamic>?> getAvailableCard(String clientId) async {
     final query = await _firestore
         .collection('cards')
         .where('status', isEqualTo: 'distributed')
         .where('ownerId', isEqualTo: clientId)
-        .where('provider', isEqualTo: provider)
         .limit(1)
         .get();
 
