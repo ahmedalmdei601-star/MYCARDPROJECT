@@ -4,16 +4,7 @@ import '../models/user_model.dart';
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> createUser(UserModel user) async {
-    await _firestore.collection('users').doc(user.id).set(user.toMap());
-  }
-
-  Future<void> updateLastLogin(String userId) async {
-    await _firestore.collection('users').doc(userId).update({
-      'lastLogin': FieldValue.serverTimestamp(),
-    });
-  }
-
+  // جلب بيانات مستخدم واحد
   Future<UserModel?> getUser(String id) async {
     final doc = await _firestore.collection('users').doc(id).get();
     if (doc.exists && doc.data() != null) {
@@ -22,6 +13,7 @@ class UserService {
     return null;
   }
 
+  // جلب قائمة العمال (البقالات)
   Stream<List<UserModel>> getClients() {
     return _firestore
         .collection('users')
@@ -32,8 +24,24 @@ class UserService {
             .toList());
   }
 
-  /// حذف المستخدم نهائياً من Firestore.
+  // تحديث آخر ظهور
+  Future<void> updateLastLogin(String userId) async {
+    await _firestore.collection('users').doc(userId).update({
+      'lastLogin': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // حذف مستخدم (بقالة) من Firestore
   Future<void> deleteUser(String id) async {
+    // 1. حذف بيانات المستخدم من Firestore
     await _firestore.collection('users').doc(id).delete();
+    
+    // 2. يمكن هنا إضافة حذف البيانات المرتبطة (مثل سجل العمليات الخاص به إذا كان مطلوباً)
+    // حالياً سنكتفي بحذف وثيقة المستخدم الأساسية
+  }
+
+  // إنشاء مستخدم جديد (يستخدم في شاشة التسجيل)
+  Future<void> createUser(UserModel user) async {
+    await _firestore.collection('users').doc(user.id).set(user.toMap());
   }
 }

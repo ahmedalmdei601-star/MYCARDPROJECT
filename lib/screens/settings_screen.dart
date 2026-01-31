@@ -13,6 +13,7 @@ class SettingsScreen extends StatelessWidget {
     final isDark = userState.themeMode == ThemeMode.dark;
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(isArabic ? 'الإعدادات' : 'Settings', style: const TextStyle(fontFamily: 'Cairo')),
       ),
@@ -45,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Theme Section
+          // Appearance Section
           _buildSectionHeader(isArabic ? 'المظهر' : 'Appearance', isArabic),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

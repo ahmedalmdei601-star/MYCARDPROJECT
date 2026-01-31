@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../services/user_services.dart';
+import '../../providers/user_state.dart';
 import '../../theme.dart';
 import '../register_screen.dart';
 
@@ -14,30 +16,35 @@ class ClientsManagementScreen extends StatefulWidget {
 class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
   final UserService _userService = UserService();
 
-  void _confirmDelete(UserModel client) {
+  void _confirmDelete(UserModel client, bool isArabic) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد الحذف', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        title: Text(
+          isArabic ? 'تأكيد الحذف' : 'Confirm Delete', 
+          textAlign: TextAlign.center, 
+          style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 48),
             const SizedBox(height: 16),
             Text(
-              'هل أنت متأكد من حذف بقالة "${client.name}"؟\nسيتم حذفها نهائياً من النظام ولن تتمكن من استعادتها.',
+              isArabic 
+                ? 'هل أنت متأكد من حذف بقالة "${client.name}"؟\nسيتم حذفها نهائياً من النظام.'
+                : 'Are you sure you want to delete "${client.name}"?\nThis action is permanent.',
               textAlign: TextAlign.center,
               style: const TextStyle(fontFamily: 'Cairo'),
             ),
           ],
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+            child: Text(isArabic ? 'إلغاء' : 'Cancel', style: const TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -48,8 +55,8 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
                 if (mounted) {
                   Navigator.pop(context); // إغلاق لودينج
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('تم حذف البقالة بنجاح من النظام', style: TextStyle(fontFamily: 'Cairo')),
+                    SnackBar(
+                      content: Text(isArabic ? 'تم حذف البقالة بنجاح' : 'Client deleted successfully', style: const TextStyle(fontFamily: 'Cairo')),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -60,7 +67,7 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
                   Navigator.pop(context); // إغلاق لودينج
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('فشل الحذف: $e', style: const TextStyle(fontFamily: 'Cairo')),
+                      content: Text(isArabic ? 'فشل الحذف: $e' : 'Delete failed: $e', style: const TextStyle(fontFamily: 'Cairo')),
                       backgroundColor: Colors.red,
                       behavior: SnackBarBehavior.floating,
                     ),
@@ -68,11 +75,8 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
                 }
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('حذف نهائي', style: TextStyle(fontFamily: 'Cairo', color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(isArabic ? 'حذف نهائي' : 'Delete', style: const TextStyle(fontFamily: 'Cairo', color: Colors.white)),
           ),
         ],
       ),
@@ -89,11 +93,12 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Provider.of<UserState>(context).locale.languageCode == 'ar';
+
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('إدارة البقالات', style: TextStyle(fontFamily: 'Cairo')),
-        elevation: 0,
+        title: Text(isArabic ? 'إدارة البقالات' : 'Manage Clients', style: const TextStyle(fontFamily: 'Cairo')),
       ),
       body: StreamBuilder<List<UserModel>>(
         stream: _userService.getClients(),
@@ -103,7 +108,7 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('خطأ في جلب البيانات: ${snapshot.error}', style: const TextStyle(fontFamily: 'Cairo')));
+            return Center(child: Text(isArabic ? 'خطأ في جلب البيانات' : 'Error fetching data', style: const TextStyle(fontFamily: 'Cairo')));
           }
 
           final clients = snapshot.data ?? [];
@@ -115,9 +120,9 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
                 children: [
                   Icon(Icons.storefront_outlined, size: 100, color: Colors.grey.shade300),
                   const SizedBox(height: 16),
-                  const Text(
-                    'لا توجد بقالات مسجلة حالياً',
-                    style: TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Cairo'),
+                  Text(
+                    isArabic ? 'لا توجد بقالات مسجلة' : 'No registered clients',
+                    style: const TextStyle(fontSize: 18, color: Colors.grey, fontFamily: 'Cairo'),
                   ),
                 ],
               ),
@@ -131,40 +136,18 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
               final client = clients[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 16),
-                elevation: 2,
-                shadowColor: Colors.black12,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  leading: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
+                  leading: CircleAvatar(
+                    backgroundColor: primaryColor.withOpacity(0.1),
                     child: const Icon(Icons.storefront, color: primaryColor),
                   ),
-                  title: Text(
-                    client.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo', fontSize: 16),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      client.phone,
-                      style: const TextStyle(fontFamily: 'Cairo', color: Colors.black54),
-                    ),
-                  ),
+                  title: Text(client.name, style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                  subtitle: Text(client.phone, style: const TextStyle(fontFamily: 'Cairo')),
                   trailing: IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-                    ),
-                    onPressed: () => _confirmDelete(client),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    onPressed: () => _confirmDelete(client, isArabic),
                   ),
                 ),
               );
@@ -173,16 +156,10 @@ class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const RegisterScreen()),
-          );
-        },
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
         backgroundColor: primaryColor,
-        elevation: 4,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('إضافة بقالة', style: TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(isArabic ? 'إضافة بقالة' : 'Add Client', style: const TextStyle(fontFamily: 'Cairo', color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }

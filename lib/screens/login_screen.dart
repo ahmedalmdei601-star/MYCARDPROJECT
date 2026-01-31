@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // تصفير الحالة محلياً قبل محاولة تسجيل دخول جديد
+    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد لضمان الاستقرار
     final userState = Provider.of<UserState>(context, listen: false);
     userState.clearState();
 
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
         phoneController.text.trim(),
         passwordController.text.trim(),
       );
-      // التوجيه يتم تلقائياً عبر المستمع في RootScreen
+      // التوجيه يتم تلقائياً عبر RootScreen المستمع لحالة UserState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,8 +64,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Provider.of<UserState>(context).locale.languageCode == 'ar';
+
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -73,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Logo
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -82,23 +85,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Icon(Icons.wifi_tethering, size: 80, color: primaryColor),
                 ),
                 const SizedBox(height: 30),
-                const Text(
-                  'مرحباً بك',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Cairo', color: primaryColor),
+                Text(
+                  isArabic ? 'مرحباً بك' : 'Welcome Back',
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, fontFamily: 'Cairo', color: primaryColor),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'قم بتسجيل الدخول لإدارة شبكتك',
-                  style: TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'Cairo'),
+                Text(
+                  isArabic ? 'قم بتسجيل الدخول لإدارة شبكتك' : 'Sign in to manage your network',
+                  style: const TextStyle(fontSize: 16, color: Colors.black54, fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 50),
+
+                // Inputs
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'رقم الهاتف',
-                    hintText: 'أدخل رقم الهاتف الخاص بك',
-                    prefixIcon: Icon(Icons.phone_android, color: primaryColor),
+                  decoration: InputDecoration(
+                    labelText: isArabic ? 'رقم الهاتف' : 'Phone Number',
+                    prefixIcon: const Icon(Icons.phone_android, color: primaryColor),
                   ),
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
@@ -107,8 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: passwordController,
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
-                    labelText: 'كلمة المرور',
-                    hintText: 'أدخل كلمة المرور',
+                    labelText: isArabic ? 'كلمة المرور' : 'Password',
                     prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
                     suffixIcon: IconButton(
                       icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
@@ -118,23 +121,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 40),
+
+                // Login Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: loading ? null : login,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: loading
                         ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text('تسجيل الدخول', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16)),
+                        : Text(isArabic ? 'تسجيل الدخول' : 'Login', style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
                 const SizedBox(height: 40),
-                const Text(
-                  'نظام إدارة الشبكات المحلية للبقالات',
-                  style: TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'Cairo'),
+                Text(
+                  isArabic ? 'نظام إدارة الشبكات المحلية للبقالات' : 'Local Network Management System',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'Cairo'),
                 ),
               ],
             ),
