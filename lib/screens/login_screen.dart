@@ -37,8 +37,8 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (user != null && mounted) {
-        // 2. إبلاغ UserState بنجاح تسجيل الدخول اليدوي لتغيير واجهة RootScreen
-        Provider.of<UserState>(context, listen: false).setManualLoginSuccess();
+        // 2. إبلاغ UserState بنجاح تسجيل الدخول اليدوي وتمرير الـ UID لضمان المزامنة الفورية
+        await Provider.of<UserState>(context, listen: false).setManualLoginSuccess(user.uid);
       }
     } catch (e) {
       if (mounted) {

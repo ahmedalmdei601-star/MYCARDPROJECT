@@ -25,9 +25,9 @@ class UserState extends ChangeNotifier {
 
   UserState() {
     // الاستماع لحالة المصادقة من Firebase
-    _auth.authStateChanges().listen((firebaseUser) {
+    _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        _loadUser(firebaseUser.uid);
+        await _loadUser(firebaseUser.uid);
       } else {
         // عند تسجيل الخروج أو عدم وجود مستخدم
         _user = null;
@@ -52,10 +52,21 @@ class UserState extends ChangeNotifier {
     }
   }
 
-  // دالة لتأكيد نجاح تسجيل الدخول اليدوي
-  void setManualLoginSuccess() {
-    _requireManualLogin = false;
+  // دالة لتأكيد نجاح تسجيل الدخول اليدوي (يتم استدعاؤها بعد AuthService.login)
+  Future<void> setManualLoginSuccess(String uid) async {
+    _isLoading = true;
     notifyListeners();
+    
+    try {
+      // التأكد من تحميل أحدث البيانات من Firestore فوراً
+      _user = await _userService.getUser(uid);
+      _requireManualLogin = false;
+    } catch (e) {
+      debugPrint('Error during manual login sync: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // دالة تسجيل الخروج التي تعيد ضبط كل شيء

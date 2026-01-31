@@ -38,10 +38,6 @@ class AuthService {
           createdAt: DateTime.now(),
         ));
         
-        // Note: The admin is still logged in as the new user now because createUserWithEmailAndPassword 
-        // automatically signs in the new user. We need to handle this in the UI or re-auth the admin.
-        // For simplicity in this flow, we assume the admin will need to re-login or we handle it.
-        
         return cred.user;
       }
     } on FirebaseAuthException catch (e) {
@@ -68,6 +64,11 @@ class AuthService {
     String password,
   ) async {
     try {
+      // التأكد من تسجيل الخروج من أي جلسة سابقة قبل محاولة الدخول الجديد
+      if (_auth.currentUser != null) {
+        await _auth.signOut();
+      }
+
       final email = _identifierToEmail(identifier);
       final cred = await _auth.signInWithEmailAndPassword(
         email: email,
