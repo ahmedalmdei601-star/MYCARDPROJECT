@@ -6,6 +6,8 @@ import '../services/user_services.dart';
 
 class UserState extends ChangeNotifier {
   final UserService _userService = UserService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  
   UserModel? _user;
   bool _isLoading = true;
 
@@ -16,18 +18,18 @@ class UserState extends ChangeNotifier {
   bool get isAuthenticated => _user != null;
 
   UserState() {
-    _auth.authStateChanges().listen((user) {
-      if (user != null) {
-        _loadUser(user.uid);
+    // الاستماع لحالة المصادقة من Firebase
+    _auth.authStateChanges().listen((firebaseUser) {
+      if (firebaseUser != null) {
+        _loadUser(firebaseUser.uid);
       } else {
+        // عند تسجيل الخروج أو عدم وجود مستخدم
         _user = null;
         _isLoading = false;
         notifyListeners();
       }
     });
   }
-
-  static final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> _loadUser(String uid) async {
     _isLoading = true;
@@ -43,21 +45,29 @@ class UserState extends ChangeNotifier {
     }
   }
 
-  Future<void> reloadUser() async {
-    if (_auth.currentUser != null) {
-      await _loadUser(_auth.currentUser!.uid);
+  // دالة تسجيل الخروج التي تعيد ضبط كل شيء
+  Future<void> signOut() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      await AuthService.signOut();
+      _user = null;
+    } catch (e) {
+      debugPrint('Error during sign out: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
+  // لتحميل البيانات يدوياً إذا لزم الأمر
   Future<void> loadUserData() async {
     if (_auth.currentUser != null) {
       await _loadUser(_auth.currentUser!.uid);
+    } else {
+      _user = null;
+      _isLoading = false;
+      notifyListeners();
     }
-  }
-
-  Future<void> signOut() async {
-    await AuthService.signOut();
-    _user = null;
-    notifyListeners();
   }
 }
