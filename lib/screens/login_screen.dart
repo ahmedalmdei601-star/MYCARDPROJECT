@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import '../services/user_services.dart';
-import '../models/user_model.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,32 +10,36 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final identifierController = TextEditingController();
+  final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
+  bool _isPasswordVisible = false;
 
   Future<void> login() async {
-    if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
+    if (phoneController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء إدخال رقم الهاتف/البريد وكلمة المرور')),
+        const SnackBar(
+          content: Text('الرجاء إدخال رقم الهاتف وكلمة المرور'),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
     setState(() => loading = true);
     try {
+      // نستخدم رقم الهاتف كمعرف للدخول
       await AuthService.login(
-        identifierController.text.trim(),
+        phoneController.text.trim(),
         passwordController.text.trim(),
       );
-      // No Navigator here — main.dart RootScreen will handle routing based on UserState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
+            backgroundColor: errorColor,
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
@@ -49,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    identifierController.dispose();
+    phoneController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -57,107 +58,103 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.card_membership, size: 80, color: primaryColor),
-              const SizedBox(height: 20),
-              const Text(
-                'تطبيق إدارة الكروت',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: primaryColor),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'نظام إدارة الكروت مسبقة الدفع',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
-              ),
-              const SizedBox(height: 40),
-
-              TextField(
-                controller: identifierController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'رقم الهاتف أو البريد الإلكتروني',
-                  prefixIcon: Icon(Icons.person),
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 30),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo or Brand Icon
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.wifi_tethering,
+                    size: 80,
+                    color: primaryColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور',
-                  prefixIcon: Icon(Icons.lock),
+                const SizedBox(height: 30),
+                Text(
+                  'مرحباً بك',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-              ),
-              const SizedBox(height: 24),
-
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: loading ? null : login,
-                  child: loading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('دخول'),
+                const SizedBox(height: 10),
+                Text(
+                  'قم بتسجيل الدخول لإدارة شبكتك',
+                  style: Theme.of(context).textTheme.bodyMedium,
                 ),
-              ),
+                const SizedBox(height: 50),
 
-              // ===== زر إنشاء الأدمن المؤقت (للاستخدام الأول فقط) =====
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () async {
-                  setState(() => loading = true);
-                  try {
-                    // Helper to convert phone to email
-                    String email = identifierController.text.contains('@') 
-                        ? identifierController.text.trim() 
-                        : '${identifierController.text.trim()}@mycardproject.app';
-                    
-                    UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                      email: email,
-                      password: passwordController.text.trim(),
-                    );
+                // Phone Input
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'رقم الهاتف',
+                    hintText: 'أدخل رقم الهاتف الخاص بك',
+                    prefixIcon: Icon(Icons.phone_android, color: primaryColor),
+                  ),
+                ),
+                const SizedBox(height: 20),
 
-                    if (cred.user != null) {
-                      await UserService().createUser(UserModel(
-                        id: cred.user!.uid,
-                        name: 'مدير النظام',
-                        phone: identifierController.text.trim(),
-                        role: 'admin',
-                        createdAt: DateTime.now(),
-                      ));
-                      
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تم إنشاء حساب الأدمن بنجاح. يمكنك الدخول الآن.')),
-                        );
-                      }
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('خطأ: $e')),
-                      );
-                    }
-                  } finally {
-                    if (mounted) setState(() => loading = false);
-                  }
-                },
-                child: const Text('إنشاء حساب أدمن بالبيانات أعلاه (لأول مرة فقط)'),
-              ),
+                // Password Input
+                TextField(
+                  controller: passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'كلمة المرور',
+                    hintText: 'أدخل كلمة المرور',
+                    prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
 
-              const SizedBox(height: 30),
-              const Text(
-                'إذا لم يكن لديك حساب، يرجى التواصل مع الأدمن.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : login,
+                    child: loading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('تسجيل الدخول'),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                
+                const Text(
+                  'نظام إدارة الشبكات المحلية للبقالات',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

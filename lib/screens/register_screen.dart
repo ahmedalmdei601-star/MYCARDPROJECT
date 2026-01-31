@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
 import '../services/user_services.dart';
 import '../models/user_model.dart';
 import '../theme.dart';
@@ -18,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
+  bool _isPasswordVisible = false;
 
   // Helper to convert phone to a valid email format for Firebase Auth
   String _identifierToEmail(String identifier) {
@@ -27,7 +27,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> createClient() async {
     if (nameController.text.isEmpty || phoneController.text.isEmpty || passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('الرجاء إكمال جميع الحقول')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء إكمال جميع الحقول'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       return;
     }
 
@@ -62,7 +67,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await secondaryApp.delete();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إنشاء حساب البقالة بنجاح')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم إنشاء حساب البقالة بنجاح'),
+              backgroundColor: primaryColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
           Navigator.pop(context);
         }
       }
@@ -73,9 +84,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else if (e.code == 'weak-password') {
         errorMessage = 'كلمة المرور ضعيفة جداً.';
       }
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: errorColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('حدث خطأ: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('حدث خطأ: $e'),
+          backgroundColor: errorColor,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
       if (mounted) setState(() => loading = false);
     }
@@ -92,49 +115,95 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('إضافة حساب بقالة جديد')),
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: const Text('إضافة بقالة'),
+      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "ملاحظة: هذا الحساب سيكون بصلاحية (صاحب بقالة) فقط.",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسم البقالة / صاحب البقالة',
-                prefixIcon: Icon(Icons.store),
+            // Header Card
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: primaryColor),
+                  SizedBox(width: 15),
+                  Expanded(
+                    child: Text(
+                      "سيتم إنشاء حساب جديد للبقالة، ويمكن لصاحب البقالة تسجيل الدخول باستخدام رقم الهاتف وكلمة المرور المحددة.",
+                      style: TextStyle(fontSize: 13, color: primaryColor, height: 1.4),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'رقم الهاتف (سيستخدم لتسجيل الدخول)',
-                prefixIcon: Icon(Icons.phone),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور الأولية',
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: loading ? null : createClient,
-                child: loading ? const CircularProgressIndicator(color: Colors.white) : const Text('إنشاء الحساب'),
+            const SizedBox(height: 30),
+
+            // Form Section
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'اسم البقالة',
+                        hintText: 'مثلاً: بقالة الخير',
+                        prefixIcon: Icon(Icons.storefront, color: primaryColor),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'رقم الهاتف',
+                        hintText: '7xxxxxxxx',
+                        prefixIcon: Icon(Icons.phone_android, color: primaryColor),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: passwordController,
+                      obscureText: !_isPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: 'كلمة المرور',
+                        prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: loading ? null : createClient,
+                        icon: loading 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.person_add_alt_1_outlined),
+                        label: const Text('إنشاء حساب Client'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

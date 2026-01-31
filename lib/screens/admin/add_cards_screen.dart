@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
-import '../../services/card_services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/card_state.dart';
 import '../../theme.dart';
@@ -38,7 +37,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
     final valueText = _valueController.text.trim();
     final value = int.tryParse(valueText);
     if (value == null) {
-      _showMessage('الرجاء إدخال قيمة الكروت أولاً');
+      _showMessage('الرجاء إدخال قيمة الكروت أولاً', isError: true);
       return;
     }
 
@@ -53,15 +52,14 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
         final file = File(result.files.single.path!);
         final content = await file.readAsString();
         
-        // تحسين منطق استخراج الأكواد: تقسيم بناءً على أسطر أو فواصل أو مسافات
         final codes = content
             .split(RegExp(r'[\n\r\s,]+'))
             .map((s) => s.trim())
-            .where((s) => s.isNotEmpty && s.length > 5) // استبعاد النصوص القصيرة جداً
+            .where((s) => s.isNotEmpty && s.length > 5)
             .toList();
 
         if (codes.isEmpty) {
-          _showMessage('لم يتم العثور على أكواد صالحة في الملف');
+          _showMessage('لم يتم العثور على أكواد صالحة في الملف', isError: true);
         } else {
           final cardState = Provider.of<CardState>(context, listen: false);
           int added = await cardState.addCardsBatch(codes, _selectedProvider, value);
@@ -69,7 +67,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
         }
       }
     } catch (e) {
-      _showMessage('خطأ في معالجة الملف: $e');
+      _showMessage('خطأ في معالجة الملف: $e', isError: true);
     } finally {
       setState(() => _loading = false);
     }
@@ -80,13 +78,13 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
     final valueText = _valueController.text.trim();
 
     if (cardNumber.isEmpty || valueText.isEmpty) {
-      _showMessage('الرجاء إدخال جميع الحقول');
+      _showMessage('الرجاء إدخال جميع الحقول', isError: true);
       return;
     }
 
     final value = int.tryParse(valueText);
     if (value == null) {
-      _showMessage('قيمة الكرت غير صحيحة');
+      _showMessage('قيمة الكرت غير صحيحة', isError: true);
       return;
     }
 
@@ -103,119 +101,158 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
       _showMessage('تم إضافة الكرت بنجاح');
     } catch (e) {
       if (e.toString().contains('CARD_ALREADY_EXISTS')) {
-        _showMessage('هذا الكرت موجود مسبقاً');
+        _showMessage('هذا الكرت موجود مسبقاً', isError: true);
       } else {
-        _showMessage('خطأ: $e');
+        _showMessage('خطأ: $e', isError: true);
       }
     } finally {
       setState(() => _loading = false);
     }
   }
 
-  void _showMessage(String msg) {
+  void _showMessage(String msg, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: isError ? errorColor : primaryColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إضافة كروت'),
-        centerTitle: true,
+        title: const Text('إدخال كروت الشبكة'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'إضافة يدوية',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: primaryColor),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: _cardNumberController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'رقم الكرت',
-                prefixIcon: Icon(Icons.credit_card),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _valueController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'قيمة الكرت',
-                prefixIcon: Icon(Icons.money),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedProvider,
-              items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _selectedProvider = v!),
-              decoration: const InputDecoration(
-                labelText: 'الشركة',
-                prefixIcon: Icon(Icons.business),
-              ),
-            ),
+            // Manual Add Section
+            _buildSectionTitle('إضافة يدوية', Icons.edit_note),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _loading ? null : _saveCard,
-                icon: const Icon(Icons.save),
-                label: const Text('حفظ الكرت'),
-                // تم تطبيق الثيم الجديد تلقائياً
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Divider(thickness: 1.5),
-            ),
-            const Text(
-              'إضافة عبر ملف (TXT)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: accentColor),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'تأكد من أن الملف يحتوي على الأكواد مفصولة بمسافات أو أسطر جديدة. سيتم استخدام "قيمة الكرت" و "الشركة" المحددة أعلاه لجميع الأكواد في الملف.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-            const SizedBox(height: 15),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton.icon(
-                onPressed: _loading ? null : _pickFile,
-                icon: const Icon(Icons.upload_file),
-                label: const Text('رفع ملف TXT ومعالجة الأكواد'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: accentColor),
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _cardNumberController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'رقم الكرت',
+                        prefixIcon: Icon(Icons.credit_card, color: primaryColor),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _valueController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'قيمة الكرت',
+                        prefixIcon: Icon(Icons.payments_outlined, color: primaryColor),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedProvider,
+                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      onChanged: (v) => setState(() => _selectedProvider = v!),
+                      decoration: const InputDecoration(
+                        labelText: 'الشركة المزودة',
+                        prefixIcon: Icon(Icons.business, color: primaryColor),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _loading ? null : _saveCard,
+                        icon: _loading 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check_circle_outline),
+                        label: const Text('حفظ الكرت في النظام'),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
+            
+            const SizedBox(height: 40),
+            
+            // File Upload Section
+            _buildSectionTitle('إضافة عبر ملف (TXT)', Icons.file_upload_outlined),
+            const SizedBox(height: 20),
+            Card(
+              margin: EdgeInsets.zero,
+              color: Colors.green.shade50,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: primaryColor.withOpacity(0.2)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Text(
+                      'ارفع ملف نصي يحتوي على الأكواد مفصولة بأسطر. سيتم تطبيق القيمة والشركة المحددة أعلاه على جميع الأكواد.',
+                      style: TextStyle(fontSize: 13, color: Colors.black54, height: 1.5),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _loading ? null : _pickFile,
+                        icon: const Icon(Icons.upload_file),
+                        label: const Text('اختيار ملف الأكواد'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: primaryColor),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
             if (_loading)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 10),
-                      Text('جاري المعالجة...'),
-                    ],
-                  ),
+                  padding: EdgeInsets.all(30),
+                  child: CircularProgressIndicator(),
                 ),
               ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: primaryColor, size: 24),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 }

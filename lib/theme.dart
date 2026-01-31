@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
-// الألوان الاحترافية المقترحة (Business Style)
-// Primary: أزرق داكن (للقوة والثقة)
-// Secondary: برتقالي (للطاقة والابتكار)
-const Color primaryColor = Color(0xFF003366); // Dark Blue
-const Color secondaryColor = Color(0xFFFF9900); // Orange
-const Color accentColor = Color(0xFF00CC99); // Teal/Mint for accents
-const Color backgroundColor = Color(0xFFF4F7F6); // Light Gray/Off-White
+// الألوان الرسمية للهوية البصرية الجديدة (Green Brand Style)
+const Color primaryColor = Color(0xFF2E7D32); // Green (اللون الأساسي)
+const Color secondaryColor = Color(0xFF4CAF50); // Light Green
+const Color accentColor = Color(0xFF81C784); // Accent Green
+const Color backgroundColor = Color(0xFFF8FAF9); // Off-White (خلفية فاتحة جداً)
 const Color errorColor = Color(0xFFD32F2F); // Red
+const Color cardColor = Colors.white;
 
 final ThemeData appTheme = ThemeData(
-  // استخدام خط Cairo (يجب التأكد من إضافته في pubspec.yaml)
+  useMaterial3: true,
   fontFamily: 'Cairo',
 
   // الألوان الأساسية
@@ -18,8 +17,10 @@ final ThemeData appTheme = ThemeData(
   colorScheme: ColorScheme.light(
     primary: primaryColor,
     secondary: secondaryColor,
+    surface: cardColor,
     error: errorColor,
-    background: backgroundColor,
+    onPrimary: Colors.white,
+    onSecondary: Colors.white,
   ),
   scaffoldBackgroundColor: backgroundColor,
 
@@ -30,21 +31,24 @@ final ThemeData appTheme = ThemeData(
     elevation: 0,
     centerTitle: true,
     titleTextStyle: TextStyle(
-     // fontFamily: 'Cairo',
+      fontFamily: 'Cairo',
       fontSize: 20,
       fontWeight: FontWeight.bold,
+      color: Colors.white,
     ),
+    iconTheme: IconThemeData(color: Colors.white),
   ),
 
   // Button Theme
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      backgroundColor: secondaryColor,
+      backgroundColor: primaryColor,
       foregroundColor: Colors.white,
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       textStyle: const TextStyle(
         fontFamily: 'Cairo',
         fontWeight: FontWeight.bold,
@@ -57,27 +61,57 @@ final ThemeData appTheme = ThemeData(
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
     fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide.none,
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.grey, width: 0.5),
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: Colors.grey, width: 0.2),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: primaryColor, width: 2),
     ),
-    labelStyle: const TextStyle(color: primaryColor),
-    hintStyle: const TextStyle(color: Colors.grey),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: const BorderSide(color: errorColor, width: 1),
+    ),
+    labelStyle: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
+    hintStyle: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
   ),
 
-  // Card Theme (متوافق مع Flutter الجديد)
-  cardTheme: const CardThemeData(
-    elevation: 4,
+  // Card Theme
+  cardTheme: CardTheme(
+    color: cardColor,
+    elevation: 2,
+    shadowColor: Colors.black.withOpacity(0.1),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(16)),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+  ),
+
+  // Text Theme
+  textTheme: const TextTheme(
+    headlineMedium: TextStyle(
+      fontFamily: 'Cairo',
+      fontWeight: FontWeight.bold,
+      color: Colors.black87,
+    ),
+    titleLarge: TextStyle(
+      fontFamily: 'Cairo',
+      fontWeight: FontWeight.bold,
+      color: Colors.black87,
+    ),
+    bodyLarge: TextStyle(
+      fontFamily: 'Cairo',
+      color: Colors.black87,
+    ),
+    bodyMedium: TextStyle(
+      fontFamily: 'Cairo',
+      color: Colors.black54,
     ),
   ),
 );
