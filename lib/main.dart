@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/user_state.dart';
@@ -16,9 +17,13 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    debugPrint("Firebase initialized successfully");
+    
+    // فرض تسجيل الخروج عند كل تشغيل للتطبيق لضمان فتح شاشة تسجيل الدخول دائماً
+    await FirebaseAuth.instance.signOut();
+    
+    debugPrint("Firebase initialized and user signed out for fresh start");
   } catch (e) {
-    debugPrint("Firebase Initialization error: $e");
+    debugPrint("Initialization error: $e");
   }
 
   runApp(
@@ -61,12 +66,38 @@ class RootScreen extends StatelessWidget {
       );
     }
 
-    // 2. إذا لم يكن مسجلاً
+    // 2. إذا لم يكن مسجلاً (أو حدث خطأ في الصلاحيات)
     if (!userState.isAuthenticated) {
+      if (userState.errorMessage != null) {
+        return Scaffold(
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(
+                    userState.errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 16, fontFamily: 'Cairo'),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => userState.signOut(),
+                    child: const Text('العودة لتسجيل الدخول'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور
+    // 3. التوجيه بناءً على الدور (Role)
     if (userState.isAdmin) {
       return const AdminDashboard();
     }
@@ -76,20 +107,7 @@ class RootScreen extends StatelessWidget {
     }
 
     // 4. حالة احتياطية
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('بيانات المستخدم غير مكتملة'),
-            ElevatedButton(
-              onPressed: () => userState.signOut(),
-              child: const Text('تسجيل الخروج'),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const LoginScreen();
   }
 }
 

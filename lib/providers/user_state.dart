@@ -10,15 +10,18 @@ class UserState extends ChangeNotifier {
   
   UserModel? _user;
   bool _isLoading = true;
+  String? _errorMessage;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
   bool get isAuthenticated => _user != null;
 
   UserState() {
-    // الاعتماد الكلي على حالة المصادقة من Firebase
+    // الاستماع لحالة المصادقة
     _auth.authStateChanges().listen((firebaseUser) {
       if (firebaseUser != null) {
         _loadUser(firebaseUser.uid);
@@ -32,39 +35,38 @@ class UserState extends ChangeNotifier {
 
   Future<void> _loadUser(String uid) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
     try {
-      _user = await _userService.getUser(uid);
+      final userData = await _userService.getUser(uid);
+      if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
+        _user = userData;
+      } else {
+        // إذا لم يوجد مستند أو الدور غير معرف
+        _user = null;
+        _errorMessage = 'صلاحيات المستخدم غير معرفة. يرجى التواصل مع المسؤول.';
+        await _auth.signOut();
+      }
     } catch (e) {
       debugPrint('Error loading user data: $e');
       _user = null;
+      _errorMessage = 'حدث خطأ أثناء جلب بيانات الصلاحيات.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // دالة تسجيل الخروج البسيطة
   Future<void> signOut() async {
     _isLoading = true;
     notifyListeners();
     try {
       await _auth.signOut();
       _user = null;
+      _errorMessage = null;
     } catch (e) {
       debugPrint('Error during sign out: $e');
     } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  // لتحميل البيانات يدوياً إذا لزم الأمر
-  Future<void> loadUserData() async {
-    if (_auth.currentUser != null) {
-      await _loadUser(_auth.currentUser!.uid);
-    } else {
-      _user = null;
       _isLoading = false;
       notifyListeners();
     }
