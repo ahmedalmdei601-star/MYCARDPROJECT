@@ -12,7 +12,7 @@ class SendCardScreen extends StatefulWidget {
 }
 
 class _SendCardScreenState extends State<SendCardScreen> {
-  String _selectedCategory = 'YemenMobile';
+  String? _selectedCategory;
   final _phoneController = TextEditingController();
   final _cardService = CardService();
   bool _loading = false;
@@ -29,6 +29,11 @@ class _SendCardScreenState extends State<SendCardScreen> {
     final phone = _phoneController.text.trim();
     final currentUser = AuthService.currentUser;
 
+    if (_selectedCategory == null) {
+      _showMsg('الرجاء اختيار الشركة المزودة', isError: true);
+      return;
+    }
+
     if (phone.isEmpty || currentUser == null) {
       _showMsg('الرجاء إدخال رقم هاتف الزبون', isError: true);
       return;
@@ -36,10 +41,11 @@ class _SendCardScreenState extends State<SendCardScreen> {
 
     setState(() => _loading = true);
     try {
-      final card = await _cardService.getAvailableCard(currentUser.uid, _selectedCategory);
+      // استخدام _selectedCategory! بعد التأكد من أنها ليست null
+      final card = await _cardService.getAvailableCard(currentUser.uid);
       
       if (card == null) {
-        _showMsg('عذراً، لا توجد كروت متاحة حالياً لهذه الشركة في مخزنك', isError: true);
+        _showMsg('عذراً، لا توجد كروت متاحة حالياً في مخزنك', isError: true);
         return;
       }
 
@@ -67,11 +73,12 @@ class _SendCardScreenState extends State<SendCardScreen> {
     } catch (e) {
       _showMsg('حدث خطأ غير متوقع: $e', isError: true);
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   void _showMsg(String m, {bool isError = false}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(m, style: const TextStyle(fontFamily: 'Cairo')),
@@ -103,8 +110,13 @@ class _SendCardScreenState extends State<SendCardScreen> {
                     // Provider Selection
                     DropdownButtonFormField<String>(
                       value: _selectedCategory,
+                      hint: const Text('اختر الشركة المزودة'),
                       items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) => setState(() => _selectedCategory = v!),
+                      onChanged: (String? v) {
+                        setState(() {
+                          _selectedCategory = v;
+                        });
+                      },
                       decoration: const InputDecoration(
                         labelText: 'الشركة المزودة',
                         prefixIcon: Icon(Icons.business, color: primaryColor),
