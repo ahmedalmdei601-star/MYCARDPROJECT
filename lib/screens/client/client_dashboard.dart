@@ -15,7 +15,7 @@ class ClientDashboard extends StatelessWidget {
     final passwordController = TextEditingController();
     showDialog(
       context: context,
-      barrierDismissible: false, // منع الإغلاق العشوائي أثناء العملية
+      barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         title: const Text("تغيير كلمة المرور", textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -35,6 +35,7 @@ class ClientDashboard extends StatelessWidget {
                 labelText: "كلمة المرور الجديدة",
                 prefixIcon: Icon(Icons.lock_outline, color: primaryColor),
               ),
+              style: const TextStyle(fontFamily: 'Cairo'),
             ),
           ],
         ),
@@ -56,19 +57,15 @@ class ClientDashboard extends StatelessWidget {
                 return;
               }
               
-              // إغلاق الديالوج قبل البدء بالعمليات الثقيلة لتجنب أخطاء الـ context
               Navigator.pop(dialogContext);
               
               try {
-                // 1. تغيير كلمة المرور (الدالة تقوم بـ signOut داخلياً أيضاً)
                 await AuthService.changePassword(newPassword);
                 
-                // 2. تنظيف الحالة محلياً في Provider
                 if (context.mounted) {
                   final userState = Provider.of<UserState>(context, listen: false);
-                  userState.clearState();
+                  await userState.signOut();
                   
-                  // 3. إظهار رسالة النجاح
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text("تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مجدداً.", style: TextStyle(fontFamily: 'Cairo')),
@@ -76,7 +73,6 @@ class ClientDashboard extends StatelessWidget {
                     ),
                   );
 
-                  // 4. التوجيه الفوري لشاشة تسجيل الدخول ومسح الـ stack
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => const LoginScreen()),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/user_state.dart';
@@ -17,11 +16,7 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    
-    // فرض تسجيل الخروج عند كل تشغيل للتطبيق لضمان فتح شاشة تسجيل الدخول دائماً
-    await FirebaseAuth.instance.signOut();
-    
-    debugPrint("Firebase initialized and user signed out for fresh start");
+    debugPrint("Firebase initialized");
   } catch (e) {
     debugPrint("Initialization error: $e");
   }

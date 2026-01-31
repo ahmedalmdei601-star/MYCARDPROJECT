@@ -28,16 +28,14 @@ class UserState extends ChangeNotifier {
     // الاستماع لحالة المصادقة
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        // إذا كان هناك مستخدم، نجلب بياناته دون تصفير مسبق مفرط
+        // إذا كان هناك مستخدم، نجلب بياناته
         await _loadUser(firebaseUser.uid);
       } else {
         // تصفير الحالة فقط عند تسجيل الخروج الفعلي
-        if (!_initializingAuth) {
-          _user = null;
-          _errorMessage = null;
-          _isLoading = false;
-          notifyListeners();
-        }
+        _user = null;
+        _errorMessage = null;
+        _isLoading = false;
+        notifyListeners();
       }
       _initializingAuth = false;
     });
@@ -55,10 +53,8 @@ class UserState extends ChangeNotifier {
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
       } else {
-        // إذا لم يوجد مستند أو الدور غير معرف
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
-        // لا نسجل الخروج تلقائياً هنا فوراً لمنع الحلقة المفرغة، بل نترك المستخدم يرى الخطأ
       }
     } catch (e) {
       debugPrint('Error loading user data from Firestore: $e');
@@ -70,9 +66,11 @@ class UserState extends ChangeNotifier {
     }
   }
 
+  // دالة تسجيل الخروج الأساسية التي تضمن تصفير الحالة
   Future<void> signOut() async {
     try {
       await _auth.signOut();
+      // تصفير الحالة يدوياً للتأكيد
       _user = null;
       _errorMessage = null;
       _isLoading = false;

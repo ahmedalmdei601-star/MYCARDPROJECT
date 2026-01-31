@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (phoneController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('الرجاء إدخال رقم الهاتف وكلمة المرور'),
+          content: Text('الرجاء إدخال رقم الهاتف وكلمة المرور', style: TextStyle(fontFamily: 'Cairo')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -30,20 +30,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد
-    Provider.of<UserState>(context, listen: false).clearState();
+    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد لضمان الاستقرار
+    final userState = Provider.of<UserState>(context, listen: false);
+    userState.clearState();
 
     try {
       await AuthService.login(
         phoneController.text.trim(),
         passwordController.text.trim(),
       );
-      // التنقل يتم تلقائياً عبر RootScreen المستمع لحالة UserState
+      // التوجيه يتم تلقائياً عبر RootScreen المستمع لحالة UserState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(fontFamily: 'Cairo')),
             backgroundColor: errorColor,
             behavior: SnackBarBehavior.floating,
           ),
@@ -88,12 +89,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 30),
                 Text(
                   'مرحباً بك',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo',
+                    color: primaryColor,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                Text(
+                const Text(
                   'قم بتسجيل الدخول لإدارة شبكتك',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black54,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
                 const SizedBox(height: 50),
 
@@ -106,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: 'أدخل رقم الهاتف الخاص بك',
                     prefixIcon: Icon(Icons.phone_android, color: primaryColor),
                   ),
+                  style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 20),
 
@@ -129,6 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                   ),
+                  style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 40),
 
@@ -146,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : const Text('تسجيل الدخول'),
+                        : const Text('تسجيل الدخول', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(height: 40),

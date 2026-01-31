@@ -32,3 +32,7 @@ class UserService {
             .toList());
   }
 }
+
+  Future<void> deleteUser(String id) async {
+    await _firestore.collection('users').doc(id).delete();
+  }

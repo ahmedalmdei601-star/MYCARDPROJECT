@@ -5,7 +5,7 @@ import '../../theme.dart';
 import 'add_cards_screen.dart';
 import 'distribute_screen.dart';
 import 'reports_screen.dart';
-import '../register_screen.dart';
+import 'clients_management_screen.dart';
 import '../login_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
@@ -68,15 +68,15 @@ class AdminDashboard extends StatelessWidget {
                     crossAxisCount: constraints.maxWidth > 600 ? 3 : 2,
                     crossAxisSpacing: 20,
                     mainAxisSpacing: 20,
-                    childAspectRatio: 0.85, // تحسين النسبة لتجنب الـ Overflow
+                    childAspectRatio: 0.85,
                     children: [
                       _buildMenuCard(
                         context,
-                        title: "إضافة بقالة",
-                        subtitle: "إنشاء حساب Client",
-                        icon: Icons.storefront_outlined,
+                        title: "إدارة البقالات",
+                        subtitle: "قائمة وحذف وإضافة",
+                        icon: Icons.manage_accounts_outlined,
                         color: Colors.blue,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientsManagementScreen())),
                       ),
                       _buildMenuCard(
                         context,
@@ -134,11 +134,11 @@ class AdminDashboard extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildDrawerItem(
-                  icon: Icons.storefront_outlined,
-                  title: "إضافة بقالة",
+                  icon: Icons.manage_accounts_outlined,
+                  title: "إدارة البقالات",
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ClientsManagementScreen()));
                   },
                 ),
                 _buildDrawerItem(
