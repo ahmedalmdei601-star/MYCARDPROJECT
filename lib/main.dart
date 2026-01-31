@@ -61,12 +61,12 @@ class RootScreen extends StatelessWidget {
       );
     }
 
-    // 2. إذا لم يكن المستخدم مسجلاً دخوله
-    if (!userState.isAuthenticated) {
+    // 2. فرض شاشة تسجيل الدخول عند التشغيل لأول مرة أو عند طلب تسجيل دخول يدوي
+    if (userState.requireManualLogin || !userState.isAuthenticated) {
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور (Role)
+    // 3. التوجيه بناءً على الدور (Role) بعد نجاح تسجيل الدخول اليدوي
     if (userState.isAdmin) {
       return const AdminDashboard();
     }

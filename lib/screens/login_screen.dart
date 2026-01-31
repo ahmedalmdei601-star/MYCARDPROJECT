@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/user_state.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,11 +30,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     try {
-      // نستخدم رقم الهاتف كمعرف للدخول
-      await AuthService.login(
+      // 1. محاولة تسجيل الدخول عبر Firebase
+      final user = await AuthService.login(
         phoneController.text.trim(),
         passwordController.text.trim(),
       );
+
+      if (user != null && mounted) {
+        // 2. إبلاغ UserState بنجاح تسجيل الدخول اليدوي لتغيير واجهة RootScreen
+        Provider.of<UserState>(context, listen: false).setManualLoginSuccess();
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

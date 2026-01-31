@@ -10,12 +10,18 @@ class UserState extends ChangeNotifier {
   
   UserModel? _user;
   bool _isLoading = true;
+  
+  // فرض تسجيل الدخول اليدوي دائماً عند تشغيل التطبيق
+  bool _requireManualLogin = true;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
-  bool get isAuthenticated => _user != null;
+  
+  // لا يتم اعتبار المستخدم authenticated إلا إذا تمت المصادقة يدوياً
+  bool get isAuthenticated => _user != null && !_requireManualLogin;
+  bool get requireManualLogin => _requireManualLogin;
 
   UserState() {
     // الاستماع لحالة المصادقة من Firebase
@@ -26,6 +32,7 @@ class UserState extends ChangeNotifier {
         // عند تسجيل الخروج أو عدم وجود مستخدم
         _user = null;
         _isLoading = false;
+        _requireManualLogin = true; // إعادة الضبط عند الخروج
         notifyListeners();
       }
     });
@@ -45,6 +52,12 @@ class UserState extends ChangeNotifier {
     }
   }
 
+  // دالة لتأكيد نجاح تسجيل الدخول اليدوي
+  void setManualLoginSuccess() {
+    _requireManualLogin = false;
+    notifyListeners();
+  }
+
   // دالة تسجيل الخروج التي تعيد ضبط كل شيء
   Future<void> signOut() async {
     _isLoading = true;
@@ -52,6 +65,7 @@ class UserState extends ChangeNotifier {
     try {
       await AuthService.signOut();
       _user = null;
+      _requireManualLogin = true;
     } catch (e) {
       debugPrint('Error during sign out: $e');
     } finally {
@@ -67,6 +81,7 @@ class UserState extends ChangeNotifier {
     } else {
       _user = null;
       _isLoading = false;
+      _requireManualLogin = true;
       notifyListeners();
     }
   }
