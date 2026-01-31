@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1000894573734",
+    "project_id": "underwood-network",
+    "storage_bucket": "underwood-network.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1000894573734:android:a0b67db9d443a611fd5867",
+        "android_client_info": {
+          "package_name": "com.example.untitled2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiphzmGQN47niNzCSqFfxYYcn99vAgaWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1000894573734:android:e25e15aafedef4e2fd5867",
+        "android_client_info": {
+          "package_name": "com.example.untitled8"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiphzmGQN47niNzCSqFfxYYcn99vAgaWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

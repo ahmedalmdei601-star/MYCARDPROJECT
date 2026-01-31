@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Gradle: androidx.fragment:fragment:1.7.1@aar" external-system-id="GRADLE">
+    <ANNOTATIONS>
+      <root url="jar://$USER_HOME$/.gradle/caches/8.14/transforms/6f68b3ffd87303812c936bfbebbfe407/transformed/fragment-1.7.1/annotations.zip!/" />
+    </ANNOTATIONS>
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/8.14/transforms/6f68b3ffd87303812c936bfbebbfe407/transformed/fragment-1.7.1/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/8.14/transforms/6f68b3ffd87303812c936bfbebbfe407/transformed/fragment-1.7.1/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/8.14/transforms/6f68b3ffd87303812c936bfbebbfe407/transformed/fragment-1.7.1/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
