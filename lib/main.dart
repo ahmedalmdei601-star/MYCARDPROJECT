@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/user_state.dart';
+import 'providers/card_state.dart';
 import 'screens/login_screen.dart';
 import 'screens/admin/admin_dashboard.dart';
 import 'screens/client/client_dashboard.dart';
@@ -24,6 +25,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => UserState()),
+        ChangeNotifierProvider(create: (_) => CardState()),
       ],
       child: const MyApp(),
     ),

@@ -14,33 +14,21 @@ class AddCardsScreen extends StatefulWidget {
 
 class _AddCardsScreenState extends State<AddCardsScreen> {
   final TextEditingController _cardNumberController = TextEditingController();
-  final TextEditingController _valueController = TextEditingController();
-
-  String _selectedProvider = 'YemenMobile';
+  
+  // القيمة الافتراضية للكرت
+  int _selectedCardValue = 100;
   bool _loading = false;
 
-  final List<String> _categories = [
-    'YemenMobile',
-    'Sabafon',
-    'MTN',
-    'YOU',
-  ];
+  // القيم المسموح بها فقط
+  final List<int> _allowedValues = [100, 200, 500, 1000];
 
   @override
   void dispose() {
     _cardNumberController.dispose();
-    _valueController.dispose();
     super.dispose();
   }
 
   Future<void> _pickFile() async {
-    final valueText = _valueController.text.trim();
-    final value = int.tryParse(valueText);
-    if (value == null) {
-      _showMessage('الرجاء إدخال قيمة الكروت أولاً', isError: true);
-      return;
-    }
-
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -61,62 +49,73 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
         if (codes.isEmpty) {
           _showMessage('لم يتم العثور على أكواد صالحة في الملف', isError: true);
         } else {
+          // استخدام الـ Provider المتاح في شجرة الودجت
           final cardState = Provider.of<CardState>(context, listen: false);
-          int added = await cardState.addCardsBatch(codes, _selectedProvider, value);
+          
+          // إضافة timeout لضمان عدم التعليق
+          int added = await cardState.addCardsBatch(
+            codes, 
+            'Default', // قيمة افتراضية بما أنه تم حذف الحقل
+            _selectedCardValue
+          ).timeout(
+            const Duration(seconds: 30),
+            onTimeout: () => throw 'انتهت مهلة الاتصال، يرجى التحقق من الإنترنت',
+          );
+          
           _showMessage('تمت معالجة ${codes.length} كود. تم إضافة $added كرت جديد بنجاح');
         }
       }
     } catch (e) {
       _showMessage('خطأ في معالجة الملف: $e', isError: true);
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _saveCard() async {
     final cardNumber = _cardNumberController.text.trim();
-    final valueText = _valueController.text.trim();
 
-    if (cardNumber.isEmpty || valueText.isEmpty) {
-      _showMessage('الرجاء إدخال جميع الحقول', isError: true);
-      return;
-    }
-
-    final value = int.tryParse(valueText);
-    if (value == null) {
-      _showMessage('قيمة الكرت غير صحيحة', isError: true);
+    if (cardNumber.isEmpty) {
+      _showMessage('الرجاء إدخال رقم الكرت', isError: true);
       return;
     }
 
     setState(() => _loading = true);
-    final cardState = Provider.of<CardState>(context, listen: false);
-
+    
     try {
+      final cardState = Provider.of<CardState>(context, listen: false);
+
       await cardState.addCard(
         cardNumber: cardNumber,
-        provider: _selectedProvider,
-        value: value,
+        provider: 'Default', // قيمة افتراضية بما أنه تم حذف الحقل
+        value: _selectedCardValue,
+      ).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () => throw 'انتهت مهلة الاتصال بالخادم',
       );
+
       _cardNumberController.clear();
       _showMessage('تم إضافة الكرت بنجاح');
     } catch (e) {
       if (e.toString().contains('CARD_ALREADY_EXISTS')) {
         _showMessage('هذا الكرت موجود مسبقاً', isError: true);
       } else {
-        _showMessage('خطأ: $e', isError: true);
+        _showMessage('حدث خطأ أثناء الحفظ: $e', isError: true);
       }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   void _showMessage(String msg, {bool isError = false}) {
     if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg, style: const TextStyle(fontFamily: 'Cairo')),
         backgroundColor: isError ? errorColor : primaryColor,
         behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
@@ -151,22 +150,16 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
-                      controller: _valueController,
-                      keyboardType: TextInputType.number,
+                    DropdownButtonFormField<int>(
+                      value: _selectedCardValue,
+                      items: _allowedValues.map((val) => DropdownMenuItem(
+                        value: val, 
+                        child: Text('$val ريال')
+                      )).toList(),
+                      onChanged: (v) => setState(() => _selectedCardValue = v!),
                       decoration: const InputDecoration(
                         labelText: 'قيمة الكرت',
                         prefixIcon: Icon(Icons.payments_outlined, color: primaryColor),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedProvider,
-                      items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                      onChanged: (v) => setState(() => _selectedProvider = v!),
-                      decoration: const InputDecoration(
-                        labelText: 'الشركة المزودة',
-                        prefixIcon: Icon(Icons.business, color: primaryColor),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -203,7 +196,7 @@ class _AddCardsScreenState extends State<AddCardsScreen> {
                 child: Column(
                   children: [
                     const Text(
-                      'ارفع ملف نصي يحتوي على الأكواد مفصولة بأسطر. سيتم تطبيق القيمة والشركة المحددة أعلاه على جميع الأكواد.',
+                      'ارفع ملف نصي يحتوي على الأكواد مفصولة بأسطر. سيتم تطبيق القيمة المحددة أعلاه على جميع الأكواد.',
                       style: TextStyle(fontSize: 13, color: Colors.black54, height: 1.5),
                       textAlign: TextAlign.center,
                     ),
