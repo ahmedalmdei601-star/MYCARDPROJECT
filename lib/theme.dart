@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-// الألوان الرسمية للهوية البصرية الجديدة (Green Brand Style)
-const Color primaryColor = Color(0xFF2E7D32); // Green (اللون الأساسي)
-const Color secondaryColor = Color(0xFF4CAF50); // Light Green
-const Color accentColor = Color(0xFF81C784); // Accent Green
-const Color backgroundColor = Color(0xFFF8FAF9); // Off-White (خلفية فاتحة جداً)
-const Color errorColor = Color(0xFFD32F2F); // Red
+// ===== Brand Colors (Green Style) =====
+const Color primaryColor = Color(0xFF2E7D32);
+const Color secondaryColor = Color(0xFF4CAF50);
+const Color accentColor = Color(0xFF81C784);
+const Color backgroundColor = Color(0xFFF8FAF9);
+const Color errorColor = Color(0xFFD32F2F);
 const Color cardColor = Colors.white;
 
 final ThemeData appTheme = ThemeData(
   useMaterial3: true,
   fontFamily: 'Cairo',
 
-  // الألوان الأساسية
-  primaryColor: primaryColor,
-  colorScheme: ColorScheme.light(
+  // ===== Colors =====
+  colorScheme: ColorScheme.fromSeed(
+    seedColor: primaryColor,
     primary: primaryColor,
     secondary: secondaryColor,
     surface: cardColor,
@@ -22,9 +22,10 @@ final ThemeData appTheme = ThemeData(
     onPrimary: Colors.white,
     onSecondary: Colors.white,
   ),
+
   scaffoldBackgroundColor: backgroundColor,
 
-  // AppBar Theme
+  // ===== AppBar =====
   appBarTheme: const AppBarTheme(
     backgroundColor: primaryColor,
     foregroundColor: Colors.white,
@@ -39,7 +40,7 @@ final ThemeData appTheme = ThemeData(
     iconTheme: IconThemeData(color: Colors.white),
   ),
 
-  // Button Theme
+  // ===== Buttons =====
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
       backgroundColor: primaryColor,
@@ -57,7 +58,7 @@ final ThemeData appTheme = ThemeData(
     ),
   ),
 
-  // Input Decoration Theme
+  // ===== Inputs =====
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
     fillColor: Colors.white,
@@ -68,7 +69,7 @@ final ThemeData appTheme = ThemeData(
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(color: Colors.grey, width: 0.2),
+      borderSide: BorderSide(color: Colors.grey, width: 0.3),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
@@ -78,22 +79,22 @@ final ThemeData appTheme = ThemeData(
       borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: errorColor, width: 1),
     ),
-    labelStyle: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
-    hintStyle: const TextStyle(color: Colors.grey, fontFamily: 'Cairo'),
+    labelStyle: const TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+    hintStyle: const TextStyle(fontFamily: 'Cairo', color: Colors.grey),
   ),
 
-  // Card Theme
-  cardTheme: CardTheme(
+  // ===== Cards (FIXED ✅) =====
+  cardTheme: const CardThemeData(
     color: cardColor,
     elevation: 2,
-    shadowColor: Colors.black.withOpacity(0.1),
+    shadowColor: Colors.black12,
+    margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.all(Radius.circular(20)),
     ),
-    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
   ),
 
-  // Text Theme
+  // ===== Text =====
   textTheme: const TextTheme(
     headlineMedium: TextStyle(
       fontFamily: 'Cairo',

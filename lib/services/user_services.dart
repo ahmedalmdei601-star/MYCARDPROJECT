@@ -27,12 +27,13 @@ class UserService {
         .collection('users')
         .where('role', isEqualTo: 'client')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+              .toList(),
+        );
   }
 
-  /// حذف المستخدم نهائياً من Firestore.
   Future<void> deleteUser(String id) async {
     await _firestore.collection('users').doc(id).delete();
   }
