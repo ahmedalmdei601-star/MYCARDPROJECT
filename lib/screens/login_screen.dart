@@ -12,16 +12,16 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final phoneController = TextEditingController();
+  final identifierController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
   bool _isPasswordVisible = false;
 
   Future<void> login() async {
-    if (phoneController.text.isEmpty || passwordController.text.isEmpty) {
+    if (identifierController.text.isEmpty || passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('الرجاء إدخال رقم الهاتف وكلمة المرور', style: TextStyle(fontFamily: 'Cairo')),
+          content: Text('الرجاء إدخال اسم المستخدم وكلمة المرور', style: TextStyle(fontFamily: 'Cairo')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -30,16 +30,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => loading = true);
     
-    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد لضمان الاستقرار
     final userState = Provider.of<UserState>(context, listen: false);
     userState.clearState();
 
     try {
       await AuthService.login(
-        phoneController.text.trim(),
+        identifierController.text.trim(),
         passwordController.text.trim(),
       );
-      // التوجيه يتم تلقائياً عبر RootScreen المستمع لحالة UserState
+      // Navigation is handled automatically by RootScreen in main.dart
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -57,14 +56,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    phoneController.dispose();
+    identifierController.dispose();
     passwordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isArabic = Provider.of<UserState>(context).locale.languageCode == 'ar';
+    final userState = Provider.of<UserState>(context);
+    final isArabic = userState.locale.languageCode == 'ar';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -75,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -96,33 +95,42 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 50),
 
-                // Inputs
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: isArabic ? 'رقم الهاتف' : 'Phone Number',
-                    prefixIcon: const Icon(Icons.phone_android, color: primaryColor),
+                // Identifier Input (Phone or Email)
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: TextField(
+                    controller: identifierController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: isArabic ? 'رقم الهاتف أو البريد' : 'Phone or Email',
+                      prefixIcon: const Icon(Icons.person_outline, color: primaryColor),
+                      hintText: '777xxxxxx',
+                      hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                    style: const TextStyle(fontFamily: 'Cairo'),
                   ),
-                  style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: isArabic ? 'كلمة المرور' : 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
-                    suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
-                      onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                
+                // Password Input
+                Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: TextField(
+                    controller: passwordController,
+                    obscureText: !_isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: isArabic ? 'كلمة المرور' : 'Password',
+                      prefixIcon: const Icon(Icons.lock_outline, color: primaryColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                        onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                      ),
                     ),
+                    style: const TextStyle(fontFamily: 'Cairo'),
                   ),
-                  style: const TextStyle(fontFamily: 'Cairo'),
                 ),
                 const SizedBox(height: 40),
 
-                // Login Button
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

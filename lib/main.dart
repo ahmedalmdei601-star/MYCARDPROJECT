@@ -13,7 +13,6 @@ import 'theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // تهيئة Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -40,7 +39,7 @@ class MyApp extends StatelessWidget {
       title: 'MyCard',
       debugShowCheckedModeBanner: false,
       
-      // إعدادات المظهر (Theme)
+      // Theme Settings
       themeMode: userState.themeMode,
       theme: ThemeData(
         useMaterial3: true,
@@ -54,11 +53,20 @@ class MyApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: primaryColor),
           ),
         ),
       ),
@@ -71,11 +79,11 @@ class MyApp extends StatelessWidget {
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
       ),
 
-      // إعدادات اللغة (Localization)
+      // Localization Settings
       locale: userState.locale,
       supportedLocales: const [
-        Locale('ar', ''), // العربية
-        Locale('en', ''), // الإنجليزية
+        Locale('ar', ''),
+        Locale('en', ''),
       ],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
@@ -83,7 +91,6 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      // شاشة البداية (التحكم المركزي في التوجيه)
       home: const RootScreen(),
     );
   }
@@ -96,25 +103,21 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // 1. حالة التحميل عند بداية التطبيق
     if (userState.isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
     }
 
-    // 2. إذا لم يكن المستخدم مسجلاً، نوجهه لشاشة تسجيل الدخول
     if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
 
-    // 3. التوجيه بناءً على الدور (Admin أو Client)
     if (userState.isAdmin) {
       return const AdminDashboard();
     } else if (userState.isClient) {
       return const ClientDashboard();
     } else {
-      // حالة احتياطية إذا كان الدور غير معروف
       return const LoginScreen();
     }
   }

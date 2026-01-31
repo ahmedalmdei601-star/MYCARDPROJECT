@@ -6,13 +6,14 @@ class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final UserService _userService = UserService();
 
-  // Helper to convert phone to a valid email format for Firebase Auth
+  // Helper to convert phone or identifier to a valid email format for Firebase Auth
   static String _identifierToEmail(String identifier) {
+    identifier = identifier.trim();
     if (identifier.contains('@')) {
-      return identifier.trim();
+      return identifier;
     }
-    // If it's just a phone number or digits, convert to dummy email
-    return '${identifier.trim()}@mycardproject.app';
+    // If it's just a phone number or digits, convert to a clean dummy email
+    return '$identifier@mycard.com';
   }
 
   // Admin-only function to create client accounts
@@ -22,34 +23,30 @@ class AuthService {
     required String name,
   }) async {
     try {
-      // 1. Create user in Firebase Auth
+      final email = _identifierToEmail(phone);
       final UserCredential cred = await _auth.createUserWithEmailAndPassword(
-        email: _identifierToEmail(phone),
+        email: email,
         password: password,
       );
 
       if (cred.user != null) {
-        // 2. Create user document in Firestore
         await _userService.createUser(UserModel(
           id: cred.user!.uid,
           name: name,
           phone: phone,
-          role: 'client', // Always create as 'client'
+          role: 'client',
           createdAt: DateTime.now(),
         ));
-        
         return cred.user;
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage = 'خطأ في إنشاء الحساب.';
       if (e.code == 'email-already-in-use') {
-        errorMessage = 'رقم الهاتف هذا مسجل بالفعل.';
+        errorMessage = 'رقم الهاتف أو الحساب مسجل بالفعل.';
       } else if (e.code == 'invalid-email') {
-        errorMessage = 'صيغة رقم الهاتف غير صحيحة.';
+        errorMessage = 'صيغة الحساب غير صحيحة.';
       } else if (e.code == 'weak-password') {
         errorMessage = 'كلمة المرور ضعيفة جداً.';
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = 'فشل الاتصال بالإنترنت.';
       }
       throw Exception(errorMessage);
     } catch (e) {
@@ -58,11 +55,8 @@ class AuthService {
     return null;
   }
 
-  // Login for all users (supports phone or email)
-  static Future<User?> login(
-    String identifier,
-    String password,
-  ) async {
+  // Login for all users
+  static Future<User?> login(String identifier, String password) async {
     try {
       final email = _identifierToEmail(identifier);
       final cred = await _auth.signInWithEmailAndPassword(
@@ -70,7 +64,6 @@ class AuthService {
         password: password,
       );
       if (cred.user != null) {
-        // Update lastLogin in Firestore
         await _userService.updateLastLogin(cred.user!.uid);
       }
       return cred.user;
@@ -78,10 +71,8 @@ class AuthService {
       String errorMessage = 'خطأ في تسجيل الدخول.';
       if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
         errorMessage = 'اسم المستخدم أو كلمة المرور غير صحيحة.';
-      } else if (e.code == 'network-request-failed') {
-        errorMessage = 'فشل الاتصال بالإنترنت.';
       } else if (e.code == 'too-many-requests') {
-        errorMessage = 'تم حظر المحاولات مؤقتاً بسبب نشاط مشبوه. حاول لاحقاً.';
+        errorMessage = 'تم حظر المحاولات مؤقتاً. حاول لاحقاً.';
       }
       throw Exception(errorMessage);
     } catch (e) {
@@ -90,22 +81,34 @@ class AuthService {
   }
 
   // Function for users to change their own password
-  static Future<void> changePassword(String newPassword) async {
+  static Future<void> changePassword(String currentPassword, String newPassword) async {
     User? user = _auth.currentUser;
-    if (user != null) {
-      await user.updatePassword(newPassword);
-      // بعد تغيير كلمة المرور بنجاح، يجب تسجيل الخروج فوراً لضمان الأمان
-      await _auth.signOut();
+    if (user != null && user.email != null) {
+      try {
+        // Re-authenticate user before changing password
+        AuthCredential credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: currentPassword,
+        );
+        await user.reauthenticateWithCredential(credential);
+        await user.updatePassword(newPassword);
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'فشل تغيير كلمة المرور.';
+        if (e.code == 'wrong-password') {
+          errorMessage = 'كلمة المرور الحالية غير صحيحة.';
+        } else if (e.code == 'weak-password') {
+          errorMessage = 'كلمة المرور الجديدة ضعيفة جداً.';
+        }
+        throw Exception(errorMessage);
+      }
     } else {
-      throw Exception('لم يتم العثور على مستخدم مسجل.');
+      throw Exception('لم يتم العثور على جلسة مستخدم نشطة.');
     }
   }
 
-  // Sign out
   static Future<void> signOut() async {
     await _auth.signOut();
   }
 
-  // Get current authenticated user
   static User? get currentUser => _auth.currentUser;
 }

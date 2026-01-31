@@ -15,79 +15,79 @@ class ClientsManagementScreen extends StatefulWidget {
 
 class _ClientsManagementScreenState extends State<ClientsManagementScreen> {
   final UserService _userService = UserService();
+  bool _isDeleting = false;
 
   void _confirmDelete(UserModel client, bool isArabic) {
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(
-          isArabic ? 'تأكيد الحذف' : 'Confirm Delete', 
-          textAlign: TextAlign.center, 
-          style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              isArabic 
-                ? 'هل أنت متأكد من حذف بقالة "${client.name}"؟\nسيتم حذفها نهائياً من النظام.'
-                : 'Are you sure you want to delete "${client.name}"?\nThis action is permanent.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontFamily: 'Cairo'),
+      barrierDismissible: !_isDeleting,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(
+              isArabic ? 'تأكيد الحذف' : 'Confirm Delete', 
+              textAlign: TextAlign.center, 
+              style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)
             ),
-          ],
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(isArabic ? 'إلغاء' : 'Cancel', style: const TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              _showLoadingDialog();
-              try {
-                await _userService.deleteUser(client.id);
-                if (mounted) {
-                  Navigator.pop(context); // إغلاق لودينج
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isArabic ? 'تم حذف البقالة بنجاح' : 'Client deleted successfully', style: const TextStyle(fontFamily: 'Cairo')),
-                      backgroundColor: Colors.green,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  Navigator.pop(context); // إغلاق لودينج
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isArabic ? 'فشل الحذف: $e' : 'Delete failed: $e', style: const TextStyle(fontFamily: 'Cairo')),
-                      backgroundColor: Colors.red,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text(isArabic ? 'حذف نهائي' : 'Delete', style: const TextStyle(fontFamily: 'Cairo', color: Colors.white)),
-          ),
-        ],
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_isDeleting)
+                  const CircularProgressIndicator(color: primaryColor)
+                else ...[
+                  const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    isArabic 
+                      ? 'هل أنت متأكد من حذف بقالة "${client.name}"؟\nسيتم حذفها نهائياً من النظام.'
+                      : 'Are you sure you want to delete "${client.name}"?\nThis action is permanent.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontFamily: 'Cairo'),
+                  ),
+                ]
+              ],
+            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            actions: _isDeleting ? [] : [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(isArabic ? 'إلغاء' : 'Cancel', style: const TextStyle(fontFamily: 'Cairo', color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  setDialogState(() => _isDeleting = true);
+                  try {
+                    await _userService.deleteUser(client.id);
+                    if (mounted) {
+                      Navigator.pop(context); // Close dialog
+                      _showSnackBar(isArabic ? 'تم حذف البقالة بنجاح' : 'Client deleted successfully');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      Navigator.pop(context); // Close dialog
+                      _showSnackBar(e.toString().replaceAll('Exception: ', ''), isError: true);
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isDeleting = false);
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: Text(isArabic ? 'حذف نهائي' : 'Delete', style: const TextStyle(fontFamily: 'Cairo', color: Colors.white)),
+              ),
+            ],
+          );
+        }
       ),
     );
   }
 
-  void _showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator(color: primaryColor)),
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontFamily: 'Cairo')),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 

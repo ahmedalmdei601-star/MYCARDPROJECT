@@ -63,14 +63,33 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // About Section
-          _buildSectionHeader(isArabic ? 'حول التطبيق' : 'About', isArabic),
+          // Account Info Section
+          _buildSectionHeader(isArabic ? 'معلومات الحساب' : 'Account Info', isArabic),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              leading: const Icon(Icons.info_outline, color: primaryColor),
-              title: Text(isArabic ? 'الإصدار' : 'Version', style: const TextStyle(fontFamily: 'Cairo')),
-              trailing: const Text('1.0.0', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.person_outline, color: primaryColor),
+                  title: Text(isArabic ? 'الاسم' : 'Name', style: const TextStyle(fontFamily: 'Cairo')),
+                  subtitle: Text(userState.user?.name ?? '', style: const TextStyle(fontFamily: 'Cairo')),
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.phone_outlined, color: primaryColor),
+                  title: Text(isArabic ? 'رقم الهاتف' : 'Phone', style: const TextStyle(fontFamily: 'Cairo')),
+                  subtitle: Text(userState.user?.phone ?? '', style: const TextStyle(fontFamily: 'Cairo')),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          
+          // Version Info
+          Center(
+            child: Text(
+              isArabic ? 'إصدار التطبيق 1.0.0' : 'App Version 1.0.0',
+              style: const TextStyle(color: Colors.grey, fontSize: 12, fontFamily: 'Cairo'),
             ),
           ),
         ],
