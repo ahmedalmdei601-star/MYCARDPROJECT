@@ -17,8 +17,7 @@ class ClientHistoryScreen extends StatelessWidget {
       body: currentUser == null
           ? const Center(child: Text('يرجى تسجيل الدخول'))
           : StreamBuilder<QuerySnapshot>(
-              // الخطأ الأساسي كان هنا: Firestore يتطلب Composite Index عند استخدام where مع orderBy على حقول مختلفة.
-              // قمنا بمعالجة الخطأ داخل الـ builder لتجنب تعليق الواجهة أو اختفاء البيانات.
+              // الاستعلام الأصلي الذي قد يفشل إذا لم يكن الفهرس المركب (clientId + timestamp) جاهزاً
               stream: FirebaseFirestore.instance
                   .collection('transactions')
                   .where('clientId', isEqualTo: currentUser.uid)
@@ -29,9 +28,9 @@ class ClientHistoryScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
                 
-                // في حال حدوث خطأ (مثل الفهرس المفقود)، نقوم بعرض البيانات بدون ترتيب أو إظهار رسالة واضحة
+                // في حال حدوث خطأ (مثل الفهرس المفقود)، نقوم بتنفيذ استعلام بديل بدون orderBy
+                // ثم نقوم بالترتيب يدوياً داخل الكود (Client-side) لضمان ظهور البيانات دائماً.
                 if (snapshot.hasError) {
-                  // إذا كان الخطأ متعلقاً بالفهرس (Index)، نقوم بتنفيذ استعلام بديل بدون orderBy
                   return StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('transactions')
@@ -46,27 +45,38 @@ class ClientHistoryScreen extends StatelessWidget {
                         return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Text(
-                              'خطأ في جلب البيانات: ${fallbackSnapshot.error}',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.red),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline, color: Colors.red, size: 60),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'حدث خطأ في جلب البيانات: ${fallbackSnapshot.error}',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ],
                             ),
                           ),
                         );
                       }
 
-                      final docs = fallbackSnapshot.data!.docs;
-                      // نقوم بالترتيب يدوياً في الكود (Client-side) كحل مؤقت لحين جاهزية الفهرس
+                      // جلب الوثائق وترتيبها يدوياً لضمان ظهور الأحدث أولاً
+                      final docs = List<QueryDocumentSnapshot>.from(fallbackSnapshot.data!.docs);
                       docs.sort((a, b) {
                         final aTime = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
                         final bTime = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
                         if (aTime == null || bTime == null) return 0;
-                        return bTime.compareTo(aTime); // ترتيب تنازلي
+                        return bTime.compareTo(aTime); // ترتيب تنازلي (الأحدث أولاً)
                       });
 
                       return _buildTransactionList(docs);
                     },
                   );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
                 }
 
                 return _buildTransactionList(snapshot.data!.docs);
@@ -75,27 +85,29 @@ class ClientHistoryScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.history_outlined, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 20),
+          const Text(
+            'لا توجد عمليات بيع مسجلة',
+            style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'ستظهر هنا العمليات التي تقوم بها لزبائنك',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTransactionList(List<QueryDocumentSnapshot> docs) {
-    if (docs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history_outlined, size: 80, color: Colors.grey.shade300),
-            const SizedBox(height: 20),
-            const Text(
-              'لا توجد عمليات بيع مسجلة',
-              style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'ستظهر هنا العمليات التي تقوم بها لزبائنك',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-          ],
-        ),
-      );
-    }
+    if (docs.isEmpty) return _buildEmptyState();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
