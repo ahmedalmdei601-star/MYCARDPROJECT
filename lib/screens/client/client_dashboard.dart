@@ -15,14 +15,15 @@ class ClientDashboard extends StatelessWidget {
     final passwordController = TextEditingController();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      barrierDismissible: false, // منع الإغلاق العشوائي أثناء العملية
+      builder: (dialogContext) => AlertDialog(
         title: const Text("تغيير كلمة المرور", textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Cairo')),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "أدخل كلمة المرور الجديدة الخاصة بك",
+              "أدخل كلمة المرور الجديدة الخاصة بك. سيتم تسجيل خروجك تلقائياً بعد التغيير.",
               style: TextStyle(fontSize: 14, color: Colors.black54, fontFamily: 'Cairo'),
               textAlign: TextAlign.center,
             ),
@@ -40,33 +41,47 @@ class ClientDashboard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               passwordController.dispose();
             },
             child: const Text("إلغاء", style: TextStyle(fontFamily: 'Cairo')),
           ),
           ElevatedButton(
             onPressed: () async {
-              if (passwordController.text.length < 6) {
+              final newPassword = passwordController.text.trim();
+              if (newPassword.length < 6) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("كلمة المرور يجب أن تكون 6 أحرف على الأقل", style: TextStyle(fontFamily: 'Cairo'))),
                 );
                 return;
               }
+              
+              // إغلاق الديالوج قبل البدء بالعمليات الثقيلة لتجنب أخطاء الـ context
+              Navigator.pop(dialogContext);
+              
               try {
-                await AuthService.changePassword(passwordController.text.trim());
+                // 1. تغيير كلمة المرور (الدالة تقوم بـ signOut داخلياً أيضاً)
+                await AuthService.changePassword(newPassword);
+                
+                // 2. تنظيف الحالة محلياً في Provider
                 if (context.mounted) {
-                  Navigator.pop(context);
+                  final userState = Provider.of<UserState>(context, listen: false);
+                  userState.clearState();
+                  
+                  // 3. إظهار رسالة النجاح
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text("تم تغيير كلمة المرور بنجاح", style: TextStyle(fontFamily: 'Cairo')),
+                    const SnackBar(
+                      content: Text("تم تغيير كلمة المرور بنجاح. يرجى تسجيل الدخول مجدداً.", style: TextStyle(fontFamily: 'Cairo')),
                       backgroundColor: primaryColor,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   );
-                  Feedback.forTap(context);
-                  passwordController.dispose();
+
+                  // 4. التوجيه الفوري لشاشة تسجيل الدخول ومسح الـ stack
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    (route) => false,
+                  );
                 }
               } catch (e) {
                 if (context.mounted) {
@@ -74,6 +89,8 @@ class ClientDashboard extends StatelessWidget {
                     SnackBar(content: Text("خطأ: $e", style: const TextStyle(fontFamily: 'Cairo')), backgroundColor: errorColor),
                   );
                 }
+              } finally {
+                passwordController.dispose();
               }
             },
             child: const Text("تحديث", style: TextStyle(fontFamily: 'Cairo')),

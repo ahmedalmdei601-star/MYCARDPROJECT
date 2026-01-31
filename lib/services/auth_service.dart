@@ -94,6 +94,8 @@ class AuthService {
     User? user = _auth.currentUser;
     if (user != null) {
       await user.updatePassword(newPassword);
+      // بعد تغيير كلمة المرور بنجاح، يجب تسجيل الخروج فوراً لضمان الأمان
+      await _auth.signOut();
     } else {
       throw Exception('لم يتم العثور على مستخدم مسجل.');
     }

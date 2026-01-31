@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
-import '../services/auth_service.dart';
 import '../services/user_services.dart';
 
 class UserState extends ChangeNotifier {
@@ -58,17 +57,21 @@ class UserState extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
-    _isLoading = true;
-    notifyListeners();
+    // لا نحتاج لتعيين isLoading هنا لتجنب أخطاء الـ Assertion عند التوجيه السريع
     try {
       await _auth.signOut();
       _user = null;
       _errorMessage = null;
+      notifyListeners();
     } catch (e) {
       debugPrint('Error during sign out: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
+  }
+
+  // دالة لتنظيف الحالة يدوياً وفورياً
+  void clearState() {
+    _user = null;
+    _errorMessage = null;
+    notifyListeners();
   }
 }
