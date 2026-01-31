@@ -10,59 +10,60 @@ class UserState extends ChangeNotifier {
   UserModel? _user;
   bool _isLoading = true;
   String? _errorMessage;
+  bool _initializingAuth = true;
 
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   
-  // هذه الخصائص تعتمد كلياً على الكائن _user الحالي
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
   bool get isAuthenticated => _user != null;
 
   UserState() {
+    _init();
+  }
+
+  void _init() {
     // الاستماع لحالة المصادقة
-    _auth.authStateChanges().listen((firebaseUser) {
+    _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
-        _loadUser(firebaseUser.uid);
+        // إذا كان هناك مستخدم، نجلب بياناته دون تصفير مسبق مفرط
+        await _loadUser(firebaseUser.uid);
       } else {
-        _resetState();
+        // تصفير الحالة فقط عند تسجيل الخروج الفعلي
+        if (!_initializingAuth) {
+          _user = null;
+          _errorMessage = null;
+          _isLoading = false;
+          notifyListeners();
+        }
       }
+      _initializingAuth = false;
     });
   }
 
-  // دالة خاصة لإعادة تعيين الحالة بالكامل
-  void _resetState() {
-    _user = null;
-    _isLoading = false;
-    _errorMessage = null;
-    notifyListeners();
-  }
-
   Future<void> _loadUser(String uid) async {
-    // التأكد من تصفير الدور الحالي قبل جلب الجديد
-    _user = null;
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      // جلب وثيقة المستخدم حصرياً من Firestore
+      // جلب وثيقة المستخدم من Firestore
       final userData = await _userService.getUser(uid);
       
       if (userData != null && (userData.role == 'admin' || userData.role == 'client')) {
         _user = userData;
       } else {
-        // إذا لم يوجد مستند أو الدور غير معرف في Firestore
+        // إذا لم يوجد مستند أو الدور غير معرف
         _user = null;
         _errorMessage = 'صلاحيات المستخدم غير معرفة في النظام.';
-        await _auth.signOut();
+        // لا نسجل الخروج تلقائياً هنا فوراً لمنع الحلقة المفرغة، بل نترك المستخدم يرى الخطأ
       }
     } catch (e) {
       debugPrint('Error loading user data from Firestore: $e');
       _user = null;
       _errorMessage = 'فشل جلب بيانات الصلاحيات من الخادم.';
-      await _auth.signOut();
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -72,24 +73,31 @@ class UserState extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _auth.signOut();
-      _resetState();
+      _user = null;
+      _errorMessage = null;
+      _isLoading = false;
+      notifyListeners();
     } catch (e) {
       debugPrint('Error during sign out: $e');
     }
   }
 
-  // دالة لتنظيف الحالة يدوياً وفورياً (تستخدم عند تغيير كلمة المرور)
+  // تصفير الحالة يدوياً عند الحاجة (مثل قبل تسجيل دخول جديد)
   void clearState() {
-    _resetState();
+    _user = null;
+    _errorMessage = null;
+    _isLoading = false;
+    notifyListeners();
   }
-  
-  // دالة مساعدة لإعادة تحميل البيانات يدوياً إذا لزم الأمر
+
+  // دالة مساعدة لإعادة تحميل البيانات يدوياً
   Future<void> refresh() async {
     final currentUser = _auth.currentUser;
     if (currentUser != null) {
       await _loadUser(currentUser.uid);
     } else {
-      _resetState();
+      _user = null;
+      notifyListeners();
     }
   }
 }

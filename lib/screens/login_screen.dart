@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/user_state.dart';
 import '../theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -27,6 +29,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => loading = true);
+    
+    // تصفير الحالة يدوياً قبل محاولة تسجيل دخول جديد
+    Provider.of<UserState>(context, listen: false).clearState();
+
     try {
       await AuthService.login(
         phoneController.text.trim(),
