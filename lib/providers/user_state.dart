@@ -9,11 +9,18 @@ class UserState extends ChangeNotifier {
   UserModel? _user;
   bool _isLoading = true;
 
+  // خصائص اللغة والوضع الداكن
+  Locale _locale = const Locale('ar');
+  ThemeMode _themeMode = ThemeMode.light;
+
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   bool get isAdmin => _user?.role == 'admin';
   bool get isClient => _user?.role == 'client';
   bool get isAuthenticated => _user != null;
+  
+  Locale get locale => _locale;
+  ThemeMode get themeMode => _themeMode;
 
   UserState() {
     _auth.authStateChanges().listen((user) {
@@ -41,6 +48,22 @@ class UserState extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // دالة تبديل اللغة
+  void toggleLanguage() {
+    if (_locale.languageCode == 'ar') {
+      _locale = const Locale('en');
+    } else {
+      _locale = const Locale('ar');
+    }
+    notifyListeners();
+  }
+
+  // دالة تبديل الوضع (داكن/فاتح)
+  void toggleTheme(bool isDark) {
+    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    notifyListeners();
   }
 
   Future<void> reloadUser() async {

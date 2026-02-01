@@ -22,6 +22,11 @@ class UserService {
     return null;
   }
 
+  // دالة حذف المستخدم نهائياً
+  Future<void> deleteUser(String id) async {
+    await _firestore.collection('users').doc(id).delete();
+  }
+
   Stream<List<UserModel>> getClients() {
     return _firestore
         .collection('users')

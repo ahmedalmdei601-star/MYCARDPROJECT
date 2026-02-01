@@ -35,10 +35,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // مراقبة UserState لتحديث اللغة والوضع الداكن
+    final userState = Provider.of<UserState>(context);
+
     return MaterialApp(
       title: 'تطبيق إدارة الكروت',
       debugShowCheckedModeBanner: false,
-      theme: appTheme,
+      theme: appTheme, // الثيم الفاتح الأصلي
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: const Color(0xFF2E7D32),
+        // يمكنك إضافة تخصيصات إضافية للثيم الداكن هنا
+      ),
+      themeMode: userState.themeMode, // ربط الوضع الداكن
+      locale: userState.locale, // ربط اللغة
       home: const RootScreen(),
       builder: _errorWidgetBuilder,
     );
