@@ -19,7 +19,7 @@ class UserState extends ChangeNotifier {
   UserModel? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _user != null;
+  bool get isAuthenticated => _auth.currentUser != null; // Use Firebase Auth as the source of truth for auth
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
   bool get isAdmin => _user?.role == 'admin';
@@ -80,11 +80,18 @@ class UserState extends ChangeNotifier {
     notifyListeners();
     try {
       final userData = await _userService.getUser(uid);
-      _user = userData;
-      _errorMessage = null;
+      if (userData != null) {
+        _user = userData;
+        _errorMessage = null;
+      } else {
+        // If doc doesn't exist in Firestore but exists in Auth, we might need to handle it
+        _user = null;
+        _errorMessage = "بيانات المستخدم غير موجودة في قاعدة البيانات.";
+      }
     } catch (e) {
-      _user = null;
-      _errorMessage = e.toString();
+      // Don't nullify _user if it's just a temporary fetch error, 
+      // but here it's safer to clear to avoid showing wrong data.
+      _errorMessage = "خطأ في تحميل البيانات: $e";
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -103,6 +110,7 @@ class UserState extends ChangeNotifier {
   void clearState() {
     _user = null;
     _errorMessage = null;
+    // We don't set _isLoading = true here to avoid showing spinner on login screen
     notifyListeners();
   }
 

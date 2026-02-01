@@ -103,22 +103,76 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    if (userState.isLoading) {
+    // If still checking Firebase Auth state
+    if (userState.isLoading && !userState.isAuthenticated) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator(color: primaryColor)),
       );
     }
 
+    // If not logged in to Firebase Auth
     if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
 
+    // If logged in to Firebase Auth but still fetching Firestore user document
+    if (userState.isLoading || userState.user == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(color: primaryColor),
+              const SizedBox(height: 20),
+              Text(
+                userState.locale.languageCode == 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...',
+                style: const TextStyle(fontFamily: 'Cairo'),
+              ),
+              if (userState.errorMessage != null) ...[
+                const SizedBox(height: 20),
+                Text(
+                  userState.errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
+                  textAlign: TextAlign.center,
+                ),
+                TextButton(
+                  onPressed: () => userState.refresh(),
+                  child: Text(userState.locale.languageCode == 'ar' ? 'إعادة المحاولة' : 'Retry'),
+                ),
+                TextButton(
+                  onPressed: () => userState.signOut(),
+                  child: Text(userState.locale.languageCode == 'ar' ? 'تسجيل الخروج' : 'Logout'),
+                ),
+              ]
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Role-based routing
     if (userState.isAdmin) {
       return const AdminDashboard();
     } else if (userState.isClient) {
       return const ClientDashboard();
     } else {
-      return const LoginScreen();
+      // Fallback for unknown role
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 60, color: Colors.orange),
+              const SizedBox(height: 20),
+              const Text('Unknown user role', style: TextStyle(fontSize: 18)),
+              TextButton(
+                onPressed: () => userState.signOut(),
+                child: const Text('Logout'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
   }
 }
