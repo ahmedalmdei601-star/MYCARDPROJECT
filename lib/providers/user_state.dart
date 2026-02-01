@@ -9,17 +9,19 @@ class UserState extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
   UserModel? _user;
-  bool _isLoading = true;
-  String? _errorMessage;
+  bool _isLoadingData = false;
+  String? _dataErrorMessage;
   
-  // لغة التطبيق والسمة
   Locale _locale = const Locale('ar');
   ThemeMode _themeMode = ThemeMode.light;
 
   UserModel? get user => _user;
-  bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
-  bool get isAuthenticated => _auth.currentUser != null; // Use Firebase Auth as the source of truth for auth
+  bool get isLoading => _isLoadingData;
+  String? get errorMessage => _dataErrorMessage;
+  
+  // CRITICAL: Auth state depends ONLY on Firebase Auth current user.
+  bool get isAuthenticated => _auth.currentUser != null;
+  
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
   bool get isAdmin => _user?.role == 'admin';
@@ -30,22 +32,15 @@ class UserState extends ChangeNotifier {
     _loadPreferences();
   }
 
-  // تحميل تفضيلات المستخدم (اللغة والمظهر)
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    
-    // اللغة
     final langCode = prefs.getString('language_code') ?? 'ar';
     _locale = Locale(langCode);
-    
-    // المظهر
     final isDark = prefs.getBool('is_dark') ?? false;
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    
     notifyListeners();
   }
 
-  // تغيير اللغة وحفظها
   Future<void> setLocale(Locale locale) async {
     _locale = locale;
     final prefs = await SharedPreferences.getInstance();
@@ -53,7 +48,6 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // تغيير المظهر وحفظه
   Future<void> toggleTheme(bool isDark) async {
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     final prefs = await SharedPreferences.getInstance();
@@ -61,64 +55,57 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // الاستماع لتغيرات حالة المصادقة
   void _init() {
-    _auth.authStateChanges().listen((firebaseUser) async {
+    _auth.authStateChanges().listen((firebaseUser) {
       if (firebaseUser != null) {
-        await _loadUser(firebaseUser.uid);
+        _loadUser(firebaseUser.uid);
       } else {
         _user = null;
-        _isLoading = false;
+        _isLoadingData = false;
         notifyListeners();
       }
     });
   }
 
-  // جلب بيانات المستخدم من Firestore
+  // Fetch Firestore data separately. Success/Failure here DOES NOT affect isAuthenticated.
   Future<void> _loadUser(String uid) async {
-    _isLoading = true;
+    _isLoadingData = true;
+    _dataErrorMessage = null;
     notifyListeners();
+    
     try {
       final userData = await _userService.getUser(uid);
       if (userData != null) {
         _user = userData;
-        _errorMessage = null;
+        // Background task: update last login without blocking
+        _userService.updateLastLogin(uid).catchError((_) => null);
       } else {
-        // If doc doesn't exist in Firestore but exists in Auth, we might need to handle it
-        _user = null;
-        _errorMessage = "بيانات المستخدم غير موجودة في قاعدة البيانات.";
+        _dataErrorMessage = "بيانات الحساب غير مكتملة في قاعدة البيانات.";
       }
     } catch (e) {
-      // Don't nullify _user if it's just a temporary fetch error, 
-      // but here it's safer to clear to avoid showing wrong data.
-      _errorMessage = "خطأ في تحميل البيانات: $e";
+      _dataErrorMessage = "حدث خطأ أثناء جلب بيانات المستخدم.";
     } finally {
-      _isLoading = false;
+      _isLoadingData = false;
       notifyListeners();
     }
   }
 
-  // تسجيل الخروج
   Future<void> signOut() async {
     await _auth.signOut();
     _user = null;
-    _errorMessage = null;
+    _dataErrorMessage = null;
     notifyListeners();
   }
 
-  // تصفير الحالة يدوياً (للتأكيد قبل تسجيل دخول جديد)
   void clearState() {
     _user = null;
-    _errorMessage = null;
-    // We don't set _isLoading = true here to avoid showing spinner on login screen
+    _dataErrorMessage = null;
     notifyListeners();
   }
 
-  // تحديث بيانات المستخدم الحالي
   Future<void> refresh() async {
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      await _loadUser(currentUser.uid);
+    if (_auth.currentUser != null) {
+      await _loadUser(_auth.currentUser!.uid);
     }
   }
 }

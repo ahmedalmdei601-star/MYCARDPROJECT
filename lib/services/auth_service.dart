@@ -6,18 +6,13 @@ class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final UserService _userService = UserService();
 
-  // Helper to convert phone or identifier to a valid email format for Firebase Auth
-  // This logic is only used for creating NEW accounts. 
-  // For login, we will try the identifier as-is first, then try the dummy email format.
+  // ONLY for creating new accounts, we use a standard dummy email format.
   static String _identifierToEmail(String identifier) {
     identifier = identifier.trim();
-    if (identifier.contains('@')) {
-      return identifier;
-    }
+    if (identifier.contains('@')) return identifier;
     return '$identifier@mycard.com';
   }
 
-  // Admin-only function to create client accounts
   static Future<User?> createClientAccount({
     required String phone,
     required String password,
@@ -56,53 +51,53 @@ class AuthService {
     return null;
   }
 
-  // Login for all users
+  // Pure Login Logic: No Firestore dependency, no mandatory conversions.
   static Future<User?> login(String identifier, String password) async {
     identifier = identifier.trim();
     
     try {
-      // 1. Try signing in with the identifier as-is (for users with real emails or old formats)
+      // Step 1: Attempt raw login with identifier as-is (for old/custom formats)
       try {
         final cred = await _auth.signInWithEmailAndPassword(
-          email: identifier.contains('@') ? identifier : _identifierToEmail(identifier),
+          email: identifier,
           password: password,
         );
-        if (cred.user != null) {
-          // Attempt to update last login, but don't fail the whole login if this background task fails
-          _userService.updateLastLogin(cred.user!.uid).catchError((_) => null);
-        }
         return cred.user;
       } on FirebaseAuthException catch (e) {
-        // If the first attempt fails with 'invalid-email' and it wasn't an email, 
-        // it's possible it's an old account format (e.g. just phone as email).
-        // However, the current standard is dummy email. 
-        // We catch common auth errors here.
-        if (e.code == 'user-not-found' || e.code == 'wrong-password' || e.code == 'invalid-credential') {
-          throw Exception('اسم المستخدم أو كلمة المرور غير صحيحة.');
+        // Step 2: If raw login fails due to invalid-email or user-not-found, 
+        // try the dummy email format (for newer accounts created via the app).
+        if (e.code == 'invalid-email' || e.code == 'user-not-found') {
+          if (!identifier.contains('@')) {
+            final dummyEmail = _identifierToEmail(identifier);
+            final cred = await _auth.signInWithEmailAndPassword(
+              email: dummyEmail,
+              password: password,
+            );
+            return cred.user;
+          }
         }
+        // If it's a real auth error (wrong-password), rethrow it.
         rethrow;
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'خطأ في تسجيل الدخول.';
-      if (e.code == 'too-many-requests') {
-        errorMessage = 'تم حظر المحاولات مؤقتاً. حاول لاحقاً.';
+      // Map only AUTH errors. Role or Data errors belong elsewhere.
+      if (e.code == 'wrong-password' || e.code == 'user-not-found' || e.code == 'invalid-credential') {
+        throw Exception('كلمة المرور غير صحيحة أو الحساب غير موجود.');
+      } else if (e.code == 'too-many-requests') {
+        throw Exception('تم حظر المحاولات مؤقتاً لكثرة المحاولات الخاطئة.');
       } else if (e.code == 'invalid-email') {
-        errorMessage = 'صيغة اسم المستخدم غير صحيحة.';
+        throw Exception('صيغة اسم المستخدم غير صحيحة.');
       }
-      throw Exception(errorMessage);
+      throw Exception('فشل تسجيل الدخول: ${e.message}');
     } catch (e) {
-      // Catch-all for any other errors, ensuring we don't accidentally hide the real cause
-      if (e.toString().contains('Exception:')) rethrow;
-      throw Exception('حدث خطأ أثناء الاتصال: $e');
+      throw Exception('حدث خطأ غير متوقع أثناء المصادقة.');
     }
   }
 
-  // Function for users to change their own password
   static Future<void> changePassword(String currentPassword, String newPassword) async {
     User? user = _auth.currentUser;
     if (user != null && user.email != null) {
       try {
-        // Re-authenticate user before changing password
         AuthCredential credential = EmailAuthProvider.credential(
           email: user.email!,
           password: currentPassword,

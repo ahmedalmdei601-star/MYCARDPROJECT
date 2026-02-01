@@ -38,8 +38,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'MyCard',
       debugShowCheckedModeBanner: false,
-      
-      // Theme Settings
       themeMode: userState.themeMode,
       theme: ThemeData(
         useMaterial3: true,
@@ -53,22 +51,6 @@ class MyApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade200),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: primaryColor),
-          ),
-        ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         primaryColor: primaryColor,
@@ -78,8 +60,6 @@ class MyApp extends StatelessWidget {
         ),
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
       ),
-
-      // Localization Settings
       locale: userState.locale,
       supportedLocales: const [
         Locale('ar', ''),
@@ -90,7 +70,6 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       home: const RootScreen(),
     );
   }
@@ -103,69 +82,69 @@ class RootScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final userState = Provider.of<UserState>(context);
 
-    // If still checking Firebase Auth state
-    if (userState.isLoading && !userState.isAuthenticated) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: primaryColor)),
-      );
-    }
-
-    // If not logged in to Firebase Auth
+    // 1. If not authenticated in Firebase Auth, ALWAYS show LoginScreen.
     if (!userState.isAuthenticated) {
       return const LoginScreen();
     }
 
-    // If logged in to Firebase Auth but still fetching Firestore user document
+    // 2. If authenticated but Firestore data is still loading or missing, show Loading/Error.
+    // This state is reached ONLY if Firebase Auth success is true.
     if (userState.isLoading || userState.user == null) {
       return Scaffold(
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const CircularProgressIndicator(color: primaryColor),
-              const SizedBox(height: 20),
-              Text(
-                userState.locale.languageCode == 'ar' ? 'جاري تحميل البيانات...' : 'Loading data...',
-                style: const TextStyle(fontFamily: 'Cairo'),
-              ),
-              if (userState.errorMessage != null) ...[
-                const SizedBox(height: 20),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(color: primaryColor),
+                const SizedBox(height: 24),
                 Text(
-                  userState.errorMessage!,
-                  style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
-                  textAlign: TextAlign.center,
+                  userState.locale.languageCode == 'ar' ? 'جاري جلب بيانات الحساب...' : 'Fetching account data...',
+                  style: const TextStyle(fontSize: 16),
                 ),
-                TextButton(
-                  onPressed: () => userState.refresh(),
-                  child: Text(userState.locale.languageCode == 'ar' ? 'إعادة المحاولة' : 'Retry'),
-                ),
-                TextButton(
-                  onPressed: () => userState.signOut(),
-                  child: Text(userState.locale.languageCode == 'ar' ? 'تسجيل الخروج' : 'Logout'),
-                ),
-              ]
-            ],
+                if (userState.errorMessage != null) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    userState.errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => userState.refresh(),
+                    child: Text(userState.locale.languageCode == 'ar' ? 'إعادة المحاولة' : 'Retry'),
+                  ),
+                  TextButton(
+                    onPressed: () => userState.signOut(),
+                    child: Text(userState.locale.languageCode == 'ar' ? 'تسجيل الخروج' : 'Logout'),
+                  ),
+                ]
+              ],
+            ),
           ),
         ),
       );
     }
 
-    // Role-based routing
+    // 3. Role-based navigation once data is ready.
     if (userState.isAdmin) {
       return const AdminDashboard();
     } else if (userState.isClient) {
       return const ClientDashboard();
     } else {
-      // Fallback for unknown role
       return Scaffold(
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 60, color: Colors.orange),
-              const SizedBox(height: 20),
-              const Text('Unknown user role', style: TextStyle(fontSize: 18)),
-              TextButton(
+              const Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+              const SizedBox(height: 16),
+              const Text('Unknown Role', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('Your account has no assigned role.'),
+              const SizedBox(height: 24),
+              ElevatedButton(
                 onPressed: () => userState.signOut(),
                 child: const Text('Logout'),
               ),
