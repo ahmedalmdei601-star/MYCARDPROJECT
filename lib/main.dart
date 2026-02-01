@@ -12,9 +12,11 @@ import 'theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
   runApp(
     MultiProvider(
       providers: [
@@ -34,10 +36,10 @@ class MyApp extends StatelessWidget {
     final userState = Provider.of<UserState>(context);
 
     return MaterialApp(
-      title: 'MyCard Project',
+      title: 'MyCard',
       debugShowCheckedModeBanner: false,
       
-      // Theme Configuration
+      // Theme Settings
       themeMode: userState.themeMode,
       theme: ThemeData(
         useMaterial3: true,
@@ -49,21 +51,35 @@ class MyApp extends StatelessWidget {
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
           centerTitle: true,
+          elevation: 0,
         ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: primaryColor),
           ),
         ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         primaryColor: primaryColor,
-        colorScheme: ColorScheme.fromSeed(seedColor: primaryColor, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: primaryColor, 
+          brightness: Brightness.dark
+        ),
         textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Cairo'),
       ),
 
-      // Localization Configuration
+      // Localization Settings
       locale: userState.locale,
       supportedLocales: const [
         Locale('ar', ''),

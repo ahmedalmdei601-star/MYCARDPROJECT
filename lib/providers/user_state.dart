@@ -30,16 +30,22 @@ class UserState extends ChangeNotifier {
     _loadPreferences();
   }
 
+  // تحميل تفضيلات المستخدم (اللغة والمظهر)
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // اللغة
     final langCode = prefs.getString('language_code') ?? 'ar';
     _locale = Locale(langCode);
     
+    // المظهر
     final isDark = prefs.getBool('is_dark') ?? false;
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    
     notifyListeners();
   }
 
+  // تغيير اللغة وحفظها
   Future<void> setLocale(Locale locale) async {
     _locale = locale;
     final prefs = await SharedPreferences.getInstance();
@@ -47,6 +53,7 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // تغيير المظهر وحفظه
   Future<void> toggleTheme(bool isDark) async {
     _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
     final prefs = await SharedPreferences.getInstance();
@@ -54,6 +61,7 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // الاستماع لتغيرات حالة المصادقة
   void _init() {
     _auth.authStateChanges().listen((firebaseUser) async {
       if (firebaseUser != null) {
@@ -66,12 +74,14 @@ class UserState extends ChangeNotifier {
     });
   }
 
+  // جلب بيانات المستخدم من Firestore
   Future<void> _loadUser(String uid) async {
     _isLoading = true;
     notifyListeners();
     try {
       final userData = await _userService.getUser(uid);
       _user = userData;
+      _errorMessage = null;
     } catch (e) {
       _user = null;
       _errorMessage = e.toString();
@@ -81,6 +91,7 @@ class UserState extends ChangeNotifier {
     }
   }
 
+  // تسجيل الخروج
   Future<void> signOut() async {
     await _auth.signOut();
     _user = null;
@@ -88,12 +99,14 @@ class UserState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // تصفير الحالة يدوياً (للتأكيد قبل تسجيل دخول جديد)
   void clearState() {
     _user = null;
     _errorMessage = null;
     notifyListeners();
   }
 
+  // تحديث بيانات المستخدم الحالي
   Future<void> refresh() async {
     final currentUser = _auth.currentUser;
     if (currentUser != null) {
